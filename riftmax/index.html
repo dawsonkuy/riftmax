@@ -68,8 +68,8 @@
     .chart { margin: 9px -6px 0; height: 115px; position: relative; }
     .chart svg { width: 100%; height: 100%; overflow: visible; display: block; }
     .chart-labels { margin-top: 4px; display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
-    .content-tabs { display: flex; align-items: end; gap: 27px; border-bottom: 1px solid var(--line); margin: 28px 1px 16px; }
-    .tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 0 1px 12px; margin-bottom: -1px; color: #8b949f; font-size: 13px; font-weight: 650; }
+    .content-tabs { display: flex; align-items: stretch; gap: 0; border-bottom: 1px solid var(--line); margin: 28px 1px 16px; }
+    .tab { flex: 1 1 50%; min-width: 0; text-align: center; background: none; border: none; border-bottom: 2px solid transparent; padding: 0 12px 12px; margin-bottom: -1px; color: #8b949f; font-size: 13px; font-weight: 650; }
     .tab.active { color: var(--text); border-color: var(--green); }
     .toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 0 1px 11px; }
     .muted-note { color: var(--muted); font-size: 11px; }
