@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#191b1f" />
+  <title>Riftmax — Summoner Profile UI Concept</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #191b1f;
+      --card: #23262b;
+      --card-raised: #292d33;
+      --line: #353a40;
+      --subtle-line: #30353b;
+      --text: #f1f3f4;
+      --secondary: #a4acb5;
+      --muted: #737d88;
+      --green: #67d99a;
+      --green-bg: rgba(103,217,154,.10);
+      --red: #fa8188;
+      --red-bg: rgba(250,129,136,.10);
+      --blue: #8eaeea;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+    .site-header { border-bottom: 1px solid rgba(255,255,255,.055); }
+    .nav { max-width: 1110px; min-height: 83px; margin: 0 auto; padding: 14px 27px; display: flex; align-items: center; gap: 26px; }
+    .logo { font-size: 23px; font-weight: 840; letter-spacing: -1.25px; white-space: nowrap; }
+    .logo span { color: var(--green); }
+    .nav-links { display: flex; align-items: center; gap: 26px; }
+    .nav-link { background: none; color: #a4aab2; border: none; padding: 8px 0; font-size: 13px; font-weight: 600; }
+    .nav-link:hover, .nav-link.active { color: var(--text); }
+    .nav-search { flex: 1; position: relative; min-width: 140px; }
+    .nav-search svg { position: absolute; top: 50%; left: 16px; transform: translateY(-50%); color: #838c97; }
+    .nav-search input { width: 100%; height: 40px; padding: 0 16px 0 42px; background: #282b30; border: 1px solid #3a3e46; border-radius: 11px; outline: none; color: var(--text); font-size: 12.5px; transition: border .2s ease; }
+    .nav-search input:focus { border-color: #568e72; }
+    .nav-search input::placeholder { color: #89919a; }
+    .page { width: min(100% - 40px, 690px); margin: 55px auto 90px; }
+    .eyebrow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; font-weight: 750; }
+    .demo-tag { color: #91a399; background: #26312b; border: 1px solid #3d5446; font-size: 10px; font-weight: 750; letter-spacing: .04em; border-radius: 99px; padding: 5px 10px; text-transform: none; }
+    .surface { border-radius: var(--radius); border: 1px solid var(--line); background: var(--card); }
+    .profile { padding: 22px 24px; display: flex; align-items: center; gap: 22px; }
+    .avatar { width: 92px; height: 92px; flex: 0 0 92px; border-radius: 50%; background: radial-gradient(circle at 32% 25%, #657260, #313d3c 58%, #1b2727); border: 3px solid #414e4a; box-shadow: inset 0 0 0 5px #212528; display: grid; place-items: center; overflow: hidden; }
+    .avatar svg { width: 61px; height: 61px; opacity: .91; }
+    .profile-main { min-width: 0; flex: 1; }
+    .player-name { font-size: 23px; letter-spacing: -.65px; font-weight: 780; overflow-wrap: anywhere; }
+    .player-name small { font-size: 14px; color: var(--muted); font-weight: 500; letter-spacing: -.1px; }
+    .rank-row { margin-top: 8px; display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+    .rank-mark { padding: 5px 8px; border-radius: 7px; background: #3a3530; color: #efc994; font-size: 12px; font-weight: 800; }
+    .rank-name { font-size: 13px; color: var(--secondary); }
+    .record { margin-top: 9px; font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+    .record strong { color: #d3dadc; font-weight: 650; }
+    .refresh { align-self: start; color: var(--secondary); border: 1px solid var(--line); background: var(--card-raised); border-radius: 9px; padding: 8px 11px; display: flex; gap: 7px; align-items: center; font-size: 11px; }
+    .refresh:hover { border-color: #6a8373; color: var(--text); }
+    .refresh svg { width: 13px; height: 13px; }
+    .lp-panel { margin-top: 12px; padding: 19px 22px 14px; overflow: hidden; }
+    .panel-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .section-title { font-size: 13px; font-weight: 750; letter-spacing: .01em; }
+    .lp-change { margin-top: 6px; display: flex; align-items: baseline; gap: 8px; }
+    .lp-change strong { font-size: 22px; letter-spacing: -.6px; }
+    .lp-change span { color: var(--muted); font-size: 11px; }
+    .ranges { display: flex; gap: 4px; border: 1px solid var(--subtle-line); border-radius: 9px; background: #202328; padding: 3px; }
+    .range { border: 0; background: none; color: var(--muted); padding: 6px 9px; border-radius: 6px; font-size: 11px; }
+    .range.selected { background: #3b4147; color: var(--text); }
+    .chart { margin: 9px -6px 0; height: 115px; position: relative; }
+    .chart svg { width: 100%; height: 100%; overflow: visible; display: block; }
+    .chart-labels { margin-top: 4px; display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
+    .content-tabs { display: flex; align-items: end; gap: 27px; border-bottom: 1px solid var(--line); margin: 28px 1px 16px; }
+    .tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 0 1px 12px; margin-bottom: -1px; color: #8b949f; font-size: 13px; font-weight: 650; }
+    .tab.active { color: var(--text); border-color: var(--green); }
+    .toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 0 1px 11px; }
+    .muted-note { color: var(--muted); font-size: 11px; }
+    .filter { border: 1px solid var(--line); border-radius: 8px; color: #b8c1c9; background: #25292e; padding: 7px 10px; font-size: 11px; }
+    .match { margin-top: 8px; overflow: hidden; }
+    .match.win { border-left: 3px solid var(--green); }
+    .match.loss { border-left: 3px solid var(--red); }
+    .match.remake { border-left: 3px solid #89929d; }
+    .match-button { background: transparent; border: 0; color: inherit; display: flex; align-items: center; text-align: left; gap: 15px; width: 100%; padding: 13px 16px; }
+    .match-button:hover { background: rgba(255,255,255,.026); }
+    .champ-icon { width: 46px; height: 46px; flex: 0 0 46px; border-radius: 12px; display: grid; place-items: center; background: #41403f; color: #e4e6e5; font-weight: 800; font-size: 17px; border: 1px solid #50545b; overflow: hidden; position: relative; }
+    .champ-icon img { width: 100%; height: 100%; display: block; object-fit: cover; position: absolute; inset: 0; }
+    .match-primary { flex: 1; min-width: 0; }
+    .match-top { display: flex; align-items: center; gap: 9px; }
+    .result { font-size: 12px; font-weight: 750; }
+    .win .result, .win .lp-value { color: var(--green); }
+    .loss .result, .loss .lp-value { color: var(--red); }
+    .remake .result, .remake .lp-value { color: #b5bdc6; }
+    .match-mode, .match-time { font-size: 11px; color: var(--muted); }
+    .match-bottom { margin-top: 5px; display: flex; gap: 12px; align-items: center; color: #c4cbd0; font-size: 12px; }
+    .match-bottom .champ-name { font-weight: 680; }
+    .match-bottom .kda { color: var(--secondary); }
+    .lp-value { margin-left: auto; white-space: nowrap; font-size: 14px; font-weight: 750; }
+    .chevron { flex: 0 0 16px; color: #77828c; transition: transform .2s ease; }
+    .match[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+    .match-extra { display: none; border-top: 1px solid var(--subtle-line); background: #202328; padding: 16px 18px 19px; }
+    .match[aria-expanded="true"] .match-extra { display: block; }
+    .extra-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 14px; font-size: 11px; color: var(--secondary); flex-wrap: wrap; }
+    .extra-head strong { color: var(--text); font-weight: 650; }
+    .scoreboard { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .team-title { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; margin-bottom: 9px; font-weight: 750; }
+    .team-title.blue { color: var(--blue); } .team-title.red { color: var(--red); }
+    .team-player { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid rgba(255,255,255,.045); font-size: 11px; }
+    .team-player span { color: #cbd2d8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .team-player small { color: var(--muted); white-space: nowrap; }
+    .team-player.me span { color: var(--green); font-weight: 760; }
+    .show-remakes { display: flex; align-items: center; justify-content: center; gap: 9px; color: var(--muted); font-size: 11px; cursor: pointer; margin: 19px 0; }
+    .show-remakes input { accent-color: var(--green); }
+    .load-more { width: 100%; border: 1px solid var(--line); color: #b9c4cd; background: #22262b; border-radius: 11px; padding: 12px; font-size: 12px; margin-top: 7px; }
+    .load-more:hover { background: #2b3036; }
+    .champions-grid { display: grid; gap: 9px; }
+    .champion-card { display: flex; gap: 14px; align-items: center; padding: 15px; }
+    .champ-stat { margin-left: auto; text-align: right; }
+    .champ-stat strong { color: var(--green); font-size: 15px; }
+    .champ-stat small { font-size: 11px; color: var(--muted); display: block; margin-top: 4px; }
+    .hidden { display: none !important; }
+    .toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 15px); background: #343a40; border: 1px solid #59616a; border-radius: 10px; padding: 12px 17px; font-size: 12px; color: white; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 40px); text-align: center; z-index: 4; }
+    .toast.visible { opacity: 1; transform: translate(-50%,0); }
+    .footnote { margin-top: 24px; text-align: center; font-size: 11px; color: var(--muted); line-height: 1.6; }
+    @media (max-width: 800px) {
+      .nav { gap: 16px; flex-wrap: wrap; }
+      .nav-links { gap: 14px; }
+      .nav-search { order: 3; flex-basis: 100%; }
+      .page { margin-top: 30px; }
+    }
+    @media (max-width: 490px) {
+      .nav { padding: 15px 18px; gap: 14px; }
+      .logo { font-size: 20px; }
+      .nav-links { margin-left: auto; gap: 12px; }
+      .nav-link { font-size: 11px; }
+      .nav-link:nth-child(1), .nav-link:nth-child(3) { display: none; }
+      .page { width: min(100% - 26px, 690px); }
+      .profile { padding: 17px 15px; gap: 13px; }
+      .avatar { width: 68px; height: 68px; flex-basis: 68px; }
+      .avatar svg { width: 48px; height: 48px; }
+      .player-name { font-size: 18px; }
+      .player-name small { font-size: 12px; }
+      .refresh { font-size: 0; padding: 8px; }
+      .refresh svg { width: 15px; height: 15px; }
+      .lp-panel { padding: 17px 15px 14px; }
+      .match-button { gap: 10px; padding: 13px 10px; }
+      .champ-icon { width: 40px; height: 40px; flex-basis: 40px; }
+      .match-mode { display: none; }
+      .match-bottom { gap: 8px; font-size: 11px; }
+      .lp-value { font-size: 12px; }
+      .scoreboard { grid-template-columns: 1fr; gap: 13px; }
+      .muted-note { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <div class="logo">rift<span>max</span></div>
+      <div class="nav-links">
+        <button class="nav-link" data-preview="Home">Home</button>
+        <button class="nav-link active" aria-current="page">Profiles</button>
+      </div>
+      <form class="nav-search" id="search-form" role="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="search" aria-label="Search Riot ID" placeholder="Search a player or Riot ID..." autocomplete="off" />
+      </form>
+      <div class="nav-links">
+        <button class="nav-link" data-preview="Leaderboards">Leaderboards</button>
+        <button class="nav-link" data-preview="Esports">Esports</button>
+      </div>
+    </nav>
+  </header>
+  <main class="page">
+    <div class="eyebrow"><span>Summoner profile</span><span class="demo-tag">UI concept · sample data</span></div>
+    <section class="surface profile" aria-label="Player profile">
+      <div class="avatar" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="23" r="12" fill="#c3d0bd"/><path d="M10 60c0-14 9-24 22-24s22 10 22 24" fill="#c3d0bd"/></svg>
+      </div>
+      <div class="profile-main">
+        <div class="player-name">Summoner <small>#NA1</small></div>
+        <div class="rank-row"><span class="rank-mark">G III</span><span class="rank-name">Gold III · 82 LP</span></div>
+        <div class="record"><span><strong>112W</strong> / <strong>90L</strong></span><span>·</span><span>55.4% win rate</span></div>
+      </div>
+      <button class="refresh" id="refresh" title="Refresh profile (demo)" aria-label="Refresh profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 4v7h-7"/></svg> Update
+      </button>
+    </section>
+    <section class="surface lp-panel" aria-label="LP history graph">
+      <div class="panel-top">
+        <div><div class="section-title">LP History</div><div class="lp-change"><strong id="lp-change">+23 LP</strong><span id="lp-subtitle">last 10 games</span></div></div>
+        <div class="ranges" aria-label="LP graph game range"><button class="range selected" data-range="10" aria-pressed="true">10</button><button class="range" data-range="20" aria-pressed="false">20</button><button class="range" data-range="50" aria-pressed="false">50</button></div>
+      </div>
+      <div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><circle id="chart-dot" r="4.2" fill="#67d99a" stroke="#23262b" stroke-width="2"/></svg></div>
+      <div class="chart-labels"><span id="chart-start">10 games ago</span><span>Most recent game</span></div>
+    </section>
+    <div class="content-tabs" role="tablist" aria-label="Profile sections"><button role="tab" id="tab-matches" aria-selected="true" class="tab active">Match History</button><button role="tab" id="tab-champions" aria-selected="false" class="tab">Champions</button></div>
+    <section id="matches-view" role="tabpanel" aria-labelledby="tab-matches">
+      <div class="toolbar"><span class="muted-note">Recent matches · newest first</span><button class="filter" id="queue-filter">All queues ▾</button></div>
+      <div id="match-list"></div>
+      <label class="show-remakes"><input type="checkbox" id="remakes" /> Show remake matches</label>
+      <button class="load-more" id="load-more">Load more matches</button>
+    </section>
+    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Most played champions · ranked solo</span></div><div id="champions-list" class="champions-grid"></div></section>
+    <div class="footnote">Riftmax UI prototype. All players, statistics, LP changes, and games shown here are illustrative.<br />No live Riot or GRID API connection in this mockup.</div>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>
+    const champions = {
+      Ahri: { initials: 'Ah', color: '#695977', image: 'Ahri' },
+      Jinx: { initials: 'Ji', color: '#396675', image: 'Jinx' },
+      LeeSin: { initials: 'LS', color: '#766044', image: 'LeeSin' },
+      Yasuo: { initials: 'Ya', color: '#486269', image: 'Yasuo' },
+      Thresh: { initials: 'Th', color: '#42665b', image: 'Thresh' },
+      Orianna: { initials: 'Or', color: '#77694c', image: 'Orianna' }
+    };
+    const matches = [
+      { id: 1, champion: 'Ahri', result: 'win', kda: '7 / 3 / 12', lp: '+20 LP', mode: 'Ranked Solo', ago: '34m ago', duration: '29m 18s', stats: '192 CS · 24.6k damage · 19 vision', ally: [['Ahri','7/3/12'],['Vi','3/5/14'],['Gnar','5/4/7'],['Jinx','11/4/6'],['Nautilus','1/7/17']], enemy: [['Yasuo','4/8/5'],['Lee Sin','7/6/4'],['Darius','3/7/6'],['Caitlyn','8/5/3'],['Lulu','1/5/11']] },
+      { id: 2, champion: 'Jinx', result: 'win', kda: '11 / 4 / 7', lp: '+24 LP', mode: 'Ranked Solo', ago: '2h ago', duration: '34m 02s', stats: '286 CS · 33.1k damage · 12 vision', ally: [['Jinx','11/4/7'],['Lulu','1/6/19'],['Syndra','8/4/8'],['Sejuani','4/5/11'],['Ornn','3/3/14']], enemy: [['Ezreal','6/5/7'],['Leona','1/7/11'],['Zed','8/6/4'],['Viego','4/8/9'],['Camille','5/5/5']] },
+      { id: 3, champion: 'LeeSin', result: 'loss', kda: '4 / 8 / 6', lp: '-20 LP', mode: 'Ranked Solo', ago: '5h ago', duration: '25m 43s', stats: '124 CS · 15.4k damage · 31 vision', ally: [['Lee Sin','4/8/6'],['Yone','3/6/3'],['Ashe','5/7/4'],['Braum','0/6/8'],['Sett','2/5/4']], enemy: [['Viego','8/2/11'],['Ahri','7/2/13'],['Kai Sa','9/3/8'],['Rakan','2/2/15'],['Aatrox','6/5/5']] },
+      { id: 4, champion: 'Yasuo', result: 'win', kda: '9 / 3 / 6', lp: '+21 LP', mode: 'Ranked Solo', ago: 'Yesterday', duration: '31m 05s', stats: '241 CS · 28.8k damage · 15 vision', ally: [['Yasuo','9/3/6'],['Diana','7/5/9'],['Kennen','4/5/11'],['Xayah','6/4/8'],['Rakan','1/6/17']], enemy: [['Sylas','4/7/8'],['Graves','5/6/8'],['Sion','3/4/7'],['Jhin','7/6/5'],['Morgana','1/5/10']] },
+      { id: 5, champion: 'Thresh', result: 'remake', kda: '0 / 0 / 0', lp: '0 LP', mode: 'Ranked Solo', ago: 'Yesterday', duration: '3m 09s', stats: '0 CS · 0 damage · 0 vision', ally: [['Thresh','0/0/0']], enemy: [['Unknown','0/0/0']] },
+      { id: 6, champion: 'Orianna', result: 'loss', kda: '3 / 6 / 9', lp: '-22 LP', mode: 'Ranked Solo', ago: '2 days ago', duration: '38m 51s', stats: '267 CS · 26.1k damage · 22 vision', ally: [['Orianna','3/6/9'],['Jarvan IV','5/7/8'],['K Sante','2/7/6'],['Jhin','7/4/5'],['Bard','1/8/12']], enemy: [['Viktor','8/3/10'],['Kha Zix','9/4/7'],['Fiora','6/4/5'],['Jinx','8/5/7'],['Milio','1/2/17']] }
+    ];
+    const lpSamples = {
+      10: [59, 67, 58, 74, 69, 83, 71, 79, 70, 82],
+      20: [91, 80, 74, 88, 70, 67, 78, 73, 62, 58, 66, 59, 67, 58, 74, 69, 83, 71, 79, 82],
+      50: [48,56,60,52,69,58,73,65,78,90,79,85,74,89,78,93,81,97,86,78,91,80,74,88,70,67,78,73,62,58,66,59,67,58,74,69,83,71,79,82]
+    };
+    // All LP values are illustrative. Riot does not include exact match LP deltas in standard match history.
+    function toast(message) {
+      const node = document.getElementById('toast');
+      node.textContent = message;
+      node.classList.add('visible');
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => node.classList.remove('visible'), 3100);
+    }
+    function championIcon(name) {
+      const meta = champions[name] || { initials: name.slice(0,2), color:'#4b5662', image:name };
+      const img = 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/' + meta.image + '.png';
+      return '<span class="champ-icon" style="background:' + meta.color + '"><span>' + meta.initials + '</span><img src="' + img + '" alt="" loading="lazy" onerror="this.remove()"></span>';
+    }
+    function renderMatches() {
+      const showRemakes = document.getElementById('remakes').checked;
+      document.getElementById('match-list').innerHTML = matches.filter(m => m.result !== 'remake' || showRemakes).map(m => {
+        const status = m.result === 'win' ? 'Victory' : m.result === 'loss' ? 'Defeat' : 'Remake';
+        const name = m.champion === 'LeeSin' ? 'Lee Sin' : m.champion;
+        const scoreboard = (players, title, cls, isAlly) => '<div><div class="team-title ' + cls + '">' + title + '</div>' + players.map((p,i) => '<div class="team-player ' + (isAlly && i === 0 ? 'me' : '') + '"><span>' + p[0] + '</span><small>' + p[1] + '</small></div>').join('') + '</div>';
+        return '<article class="surface match ' + m.result + '" id="match-' + m.id + '" aria-expanded="false"><button class="match-button" aria-controls="detail-' + m.id + '" aria-expanded="false" data-match="' + m.id + '">' +
+          championIcon(m.champion) + '<div class="match-primary"><div class="match-top"><span class="result">' + status + '</span><span class="match-mode">' + m.mode + '</span><span class="match-time">· ' + m.ago + '</span></div><div class="match-bottom"><span class="champ-name">' + name + '</span><span class="kda">' + m.kda + '</span></div></div><span class="lp-value">' + m.lp + '</span><svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>' +
+          '<div class="match-extra" id="detail-' + m.id + '"><div class="extra-head"><span><strong>' + m.mode + '</strong> · ' + m.duration + '</span><span>' + m.stats + '</span></div><div class="scoreboard">' + scoreboard(m.ally,'Your team','blue',true) + scoreboard(m.enemy,'Enemy team','red',false) + '</div></div></article>';
+      }).join('');
+    }
+    function renderChampions() {
+      const data = [
+        ['Ahri','38 games','63.2%','7.1 / 3.4 / 8.9'],
+        ['Jinx','27 games','59.3%','8.4 / 4.2 / 6.7'],
+        ['Yasuo','22 games','54.5%','6.5 / 5.1 / 5.2'],
+        ['LeeSin','18 games','50.0%','4.8 / 5.8 / 8.1']
+      ];
+      document.getElementById('champions-list').innerHTML = data.map(c => '<div class="surface champion-card">' + championIcon(c[0]) + '<div><div class="section-title">' + (c[0] === 'LeeSin' ? 'Lee Sin' : c[0]) + '</div><div class="muted-note" style="margin-top:5px">' + c[1] + ' · ' + c[3] + ' KDA</div></div><div class="champ-stat"><strong>' + c[2] + '</strong><small>Win rate</small></div></div>').join('');
+    }
+    function renderChart(range) {
+      const points = lpSamples[range];
+      const width = 640, height = 110, padding = 9;
+      const min = Math.min(...points) - 5, max = Math.max(...points) + 5;
+      const coords = points.map((v,i) => [padding + (i/(points.length-1))*(width-2*padding), padding + (1-(v-min)/(max-min))*(height-2*padding)]);
+      const line = 'M ' + coords.map(c => c.join(' ')).join(' L ');
+      const first = coords[0], last = coords[coords.length-1];
+      const change = points[points.length-1] - points[0], positive = change >= 0;
+      const color = positive ? '#67d99a' : '#fa8188';
+      document.getElementById('chart-line').setAttribute('d',line);
+      document.getElementById('chart-line').setAttribute('stroke',color);
+      document.getElementById('chart-area').setAttribute('d',line + ' L ' + last[0] + ' ' + height + ' L ' + first[0] + ' ' + height + ' Z');
+      document.querySelector('#chart-fill stop').setAttribute('stop-color',color);
+      document.querySelector('#chart-fill stop:last-child').setAttribute('stop-color',color);
+      document.getElementById('chart-dot').setAttribute('cx',last[0]);
+      document.getElementById('chart-dot').setAttribute('cy',last[1]);
+      document.getElementById('chart-dot').setAttribute('fill',color);
+      const changeNode = document.getElementById('lp-change');
+      changeNode.textContent = (positive ? '+' : '') + change + ' LP';
+      changeNode.style.color = color;
+      document.getElementById('lp-subtitle').textContent = 'last ' + range + ' games';
+      document.getElementById('chart-start').textContent = range + ' games ago';
+      document.querySelectorAll('.range').forEach(b => { const active = b.dataset.range === String(range); b.classList.toggle('selected',active); b.setAttribute('aria-pressed', String(active)); });
+    }
+    document.getElementById('match-list').addEventListener('click', e => {
+      const button = e.target.closest('[data-match]');
+      if (!button) return;
+      const article = button.closest('.match');
+      const expanded = article.getAttribute('aria-expanded') === 'true';
+      article.setAttribute('aria-expanded', String(!expanded));
+      button.setAttribute('aria-expanded', String(!expanded));
+    });
+    document.querySelectorAll('.range').forEach(b => b.addEventListener('click', () => renderChart(Number(b.dataset.range))));
+    document.getElementById('remakes').addEventListener('change', renderMatches);
+    document.getElementById('load-more').addEventListener('click', () => toast('More matches will load when the Riot API is connected.'));
+    document.getElementById('queue-filter').addEventListener('click', () => toast('Queue filtering is coming after Riot API integration.'));
+    document.getElementById('refresh').addEventListener('click', () => toast('This is a visual prototype. Player refresh will use the Riot API.'));
+    document.querySelectorAll('[data-preview]').forEach(b => b.addEventListener('click', () => toast(b.dataset.preview + ' page is not part of this UI mockup yet.')));
+    document.getElementById('search-form').addEventListener('submit', e => { e.preventDefault(); toast('Search will be connected to Riot ID lookup.'); });
+    function switchTab(which) {
+      const matches = which === 'matches';
+      document.getElementById('matches-view').classList.toggle('hidden', !matches);
+      document.getElementById('champions-view').classList.toggle('hidden', matches);
+      for (const name of ['matches','champions']) {
+        const tab = document.getElementById('tab-' + name);
+        const selected = name === which;
+        tab.classList.toggle('active',selected);
+        tab.setAttribute('aria-selected',String(selected));
+      }
+    }
+    document.getElementById('tab-matches').addEventListener('click',() => switchTab('matches'));
+    document.getElementById('tab-champions').addEventListener('click',() => switchTab('champions'));
+    renderMatches();
+    renderChampions();
+    renderChart(10);
+  </script>
+</body>
+</html>
