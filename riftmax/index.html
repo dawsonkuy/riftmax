@@ -102,10 +102,12 @@
     .scoreboard { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .team-title { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; margin-bottom: 9px; font-weight: 750; }
     .team-title.blue { color: var(--blue); } .team-title.red { color: var(--red); }
-    .team-player { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid rgba(255,255,255,.045); font-size: 11px; }
-    .team-player span { color: #cbd2d8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .team-player { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(255,255,255,.045); font-size: 11px; }
+    .player-identity { display: flex; align-items: center; flex: 1; min-width: 0; gap: 9px; }
+    .team-player .player-name { color: #cbd2d8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .team-player .champ-icon { width: 25px; height: 25px; flex: 0 0 25px; border-radius: 6px; font-size: 10px; }
     .team-player small { color: var(--muted); white-space: nowrap; }
-    .team-player.me span { color: var(--green); font-weight: 760; }
+    .team-player.me .player-name { color: var(--green); font-weight: 760; }
     .show-remakes { display: flex; align-items: center; justify-content: center; gap: 9px; color: var(--muted); font-size: 11px; cursor: pointer; margin: 19px 0; }
     .show-remakes input { accent-color: var(--green); }
     .load-more { width: 100%; border: 1px solid var(--line); color: #b9c4cd; background: #22262b; border-radius: 11px; padding: 12px; font-size: 12px; margin-top: 7px; }
@@ -188,7 +190,7 @@
         <div><div class="section-title">LP History</div><div class="lp-change"><strong id="lp-change">+23 LP</strong><span id="lp-subtitle">last 10 games</span></div></div>
         <div class="ranges" aria-label="LP graph game range"><button class="range selected" data-range="10" aria-pressed="true">10</button><button class="range" data-range="20" aria-pressed="false">20</button><button class="range" data-range="50" aria-pressed="false">50</button></div>
       </div>
-      <div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><circle id="chart-dot" r="4.2" fill="#67d99a" stroke="#23262b" stroke-width="2"/></svg></div>
+      <div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><g id="chart-points"></g></svg></div>
       <div class="chart-labels"><span id="chart-start">10 games ago</span><span>Most recent game</span></div>
     </section>
     <div class="content-tabs" role="tablist" aria-label="Profile sections"><button role="tab" id="tab-matches" aria-selected="true" class="tab active">Match History</button><button role="tab" id="tab-champions" aria-selected="false" class="tab">Champions</button></div>
@@ -233,7 +235,9 @@
       toast.timer = setTimeout(() => node.classList.remove('visible'), 3100);
     }
     function championIcon(name) {
-      const meta = champions[name] || { initials: name.slice(0,2), color:'#4b5662', image:name };
+      const imageIds = { 'Lee Sin': 'LeeSin', 'Kai Sa': 'Kaisa', 'Kha Zix': 'Khazix', 'K Sante': 'KSante', 'Jarvan IV': 'JarvanIV' };
+      const imageId = imageIds[name] || name.replace(/[ .'’]/g, '');
+      const meta = champions[name] || champions[imageId] || { initials: name.slice(0,2), color: '#4b5662', image: imageId };
       const img = 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/' + meta.image + '.png';
       return '<span class="champ-icon" style="background:' + meta.color + '"><span>' + meta.initials + '</span><img src="' + img + '" alt="" loading="lazy" onerror="this.remove()"></span>';
     }
@@ -242,7 +246,7 @@
       document.getElementById('match-list').innerHTML = matches.filter(m => m.result !== 'remake' || showRemakes).map(m => {
         const status = m.result === 'win' ? 'Victory' : m.result === 'loss' ? 'Defeat' : 'Remake';
         const name = m.champion === 'LeeSin' ? 'Lee Sin' : m.champion;
-        const scoreboard = (players, title, cls, isAlly) => '<div><div class="team-title ' + cls + '">' + title + '</div>' + players.map((p,i) => '<div class="team-player ' + (isAlly && i === 0 ? 'me' : '') + '"><span>' + p[0] + '</span><small>' + p[1] + '</small></div>').join('') + '</div>';
+        const scoreboard = (players, title, cls, isAlly) => '<div><div class="team-title ' + cls + '">' + title + '</div>' + players.map((p,i) => '<div class="team-player ' + (isAlly && i === 0 ? 'me' : '') + '"><div class="player-identity">' + championIcon(p[0]) + '<span class="player-name">' + p[0] + '</span></div><small>' + p[1] + '</small></div>').join('') + '</div>';
         return '<article class="surface match ' + m.result + '" id="match-' + m.id + '" aria-expanded="false"><button class="match-button" aria-controls="detail-' + m.id + '" aria-expanded="false" data-match="' + m.id + '">' +
           championIcon(m.champion) + '<div class="match-primary"><div class="match-top"><span class="result">' + status + '</span><span class="match-mode">' + m.mode + '</span><span class="match-time">· ' + m.ago + '</span></div><div class="match-bottom"><span class="champ-name">' + name + '</span><span class="kda">' + m.kda + '</span></div></div><span class="lp-value">' + m.lp + '</span><svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>' +
           '<div class="match-extra" id="detail-' + m.id + '"><div class="extra-head"><span><strong>' + m.mode + '</strong> · ' + m.duration + '</span><span>' + m.stats + '</span></div><div class="scoreboard">' + scoreboard(m.ally,'Your team','blue',true) + scoreboard(m.enemy,'Enemy team','red',false) + '</div></div></article>';
@@ -271,9 +275,11 @@
       document.getElementById('chart-area').setAttribute('d',line + ' L ' + last[0] + ' ' + height + ' L ' + first[0] + ' ' + height + ' Z');
       document.querySelector('#chart-fill stop').setAttribute('stop-color',color);
       document.querySelector('#chart-fill stop:last-child').setAttribute('stop-color',color);
-      document.getElementById('chart-dot').setAttribute('cx',last[0]);
-      document.getElementById('chart-dot').setAttribute('cy',last[1]);
-      document.getElementById('chart-dot').setAttribute('fill',color);
+      // Draw one dot per game in the selected range, including the first and last.
+      const radius = range === 50 ? 2.8 : range === 20 ? 3.4 : 4.2;
+      document.getElementById('chart-points').innerHTML = coords.map(([x,y],i) =>
+        '<circle cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="' + radius + '" fill="' + color + '" stroke="#23262b" stroke-width="1.6"><title>Game ' + (i+1) + ': ' + points[i] + ' sample LP</title></circle>'
+      ).join('');
       const changeNode = document.getElementById('lp-change');
       changeNode.textContent = (positive ? '+' : '') + change + ' LP';
       changeNode.style.color = color;
