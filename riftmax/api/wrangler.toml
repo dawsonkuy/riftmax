@@ -7,5 +7,6 @@ workers_dev = true
 # Comma-separated production/browser origins; the HTMLPreview origin is built into worker.js for local prototyping.
 ALLOWED_ORIGINS = "http://localhost:8788,http://127.0.0.1:8788"
 
-[secrets]
-required = ["RIOT_API_KEY"]
+# First deploy creates the Worker without credentials. Next run:
+# npx.cmd wrangler secret put RIOT_API_KEY
+# Wrangler prompts for a newly generated key and deploys it securely.
