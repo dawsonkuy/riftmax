@@ -31,6 +31,7 @@
     .site-header { border-bottom: 1px solid rgba(255,255,255,.055); }
     .api-connect { margin:0 0 14px; padding:11px 14px; background:#20272a; border:1px solid #37463d; border-radius:11px; font-size:11px; color:var(--secondary); }
     .api-connect-main { display:flex; align-items:center; gap:9px; justify-content:space-between; }
+    .avatar img { width:100%; height:100%; display:block; object-fit:cover; }
     .api-connect-main #api-state { overflow-wrap:anywhere; }
     .api-settings-button { color:#a9e9bc; background:none; border:0; font-weight:750; font-size:11px; flex-shrink:0; }
     #api-settings { margin-top:13px; padding-top:12px; border-top:1px solid var(--subtle-line); display:grid; gap:8px; }
@@ -479,9 +480,20 @@
     document.querySelectorAll('.range').forEach(b => b.addEventListener('click', () => renderChart(b.dataset.range)));
     document.getElementById('remakes').addEventListener('change', renderMatches);
     document.getElementById('load-more').addEventListener('click', () => {visibleCount+=8;renderMatches();});
-    document.getElementById('refresh').addEventListener('click', () => toast('This is a visual prototype. Player refresh will use the Riot API.'));
+    document.getElementById('refresh').addEventListener('click', () => {
+      if(lastLiveQuery) loadRiotProfile(lastLiveQuery);
+      else toast('Enter a Riot ID (Name#TAG) in the search bar.');
+    });
     document.querySelectorAll('[data-preview]').forEach(b => b.addEventListener('click', () => toast(b.dataset.preview + ' page is not part of this UI mockup yet.')));
-    document.getElementById('search-form').addEventListener('submit', e => { e.preventDefault(); toast('Search will be connected to Riot ID lookup.'); });
+    document.getElementById('search-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const query=document.getElementById('search').value.trim();
+      if(!query.includes('#')||query.lastIndexOf('#')===0||query.endsWith('#')){
+        toast('Enter a Riot ID such as Name#NA1.');
+        return;
+      }
+      loadRiotProfile(query);
+    });
     function switchTab(which) {
       const matches = which === 'matches';
       document.getElementById('matches-view').classList.toggle('hidden', !matches);
@@ -946,6 +958,109 @@
       activeMode=next;visibleCount=8;activeChampion=null;selectedChampion=null;
       renderEverything();
     }));
+    function setApiSettingsVisible(show) {
+      document.getElementById('api-settings').hidden=!show;
+      const btn=document.getElementById('show-api-settings');
+      btn.setAttribute('aria-expanded',String(show));
+      btn.textContent=show?'Hide backend settings':'Backend settings';
+    }
+    function setApiStatus(message,isError=false) {
+      const node=document.getElementById('api-state');
+      node.textContent=message;
+      node.style.color=isError?'#fa8188':'#a9ccaf';
+    }
+    async function loadRiotProfile(query) {
+      if(!workerBase) {
+        setApiSettingsVisible(true);
+        setApiStatus('Connect a deployed Cloudflare Worker first.',true);
+        return;
+      }
+      const separator=query.lastIndexOf('#');
+      if(separator<=0||separator===query.length-1){toast('Use Name#TAG for a Riot ID.');return;}
+      const gameName=query.slice(0,separator).trim();
+      const tagLine=query.slice(separator+1).trim();
+      const platform=document.getElementById('platform-select').value;
+      const url=new URL(workerBase+'/api/profile');
+      url.searchParams.set('gameName',gameName);
+      url.searchParams.set('tagLine',tagLine);
+      url.searchParams.set('platform',platform);
+      setApiStatus('Loading Riot account and recent games...');
+      const formInput=document.getElementById('search');
+      const refresh=document.getElementById('refresh');
+      refresh.disabled=true;formInput.disabled=true;
+      try {
+        const response=await fetch(url.toString(),{method:'GET',mode:'cors',headers:{Accept:'application/json'}});
+        const body=await response.json();
+        if(!response.ok)throw Error(body.error||('Riot backend returned HTTP '+response.status));
+        if(body.source!=='riot-api'||!Array.isArray(body.matches)||!Array.isArray(body.ranks)||!body.account)
+          throw Error('Riot Worker returned an incomplete response.');
+        // Only switch away from demo mode after all necessary data has been verified.
+        const byQueue={solo:'RANKED_SOLO_5x5',flex:'RANKED_FLEX_SR'};
+        const nextMeta={};
+        for(const key of ['solo','flex','draft','aram']) {
+          const entry=key==='solo'||key==='flex'?body.ranks.find(x=>x.queueType===byQueue[key]):null;
+          const current=modeMeta[key];
+          nextMeta[key]={
+            ...current,
+            ...(entry?{current:String(entry.tier)+' '+String(entry.rank),rankShort:String(entry.tier).slice(0,1)+' '+String(entry.rank),
+                lp:Number(entry.leaguePoints)||0,season:[Number(entry.wins)||0,Number(entry.losses)||0]}
+              :{current:'Unranked',rankShort:'—',lp:0,season:[0,0]}),
+            allTimePeak:null
+          };
+        }
+        const nextGames={solo:[],flex:[],draft:[],aram:[]};
+        for(const game of body.matches) {
+          if(game&&Object.hasOwn(nextGames,game.modeKey))nextGames[game.modeKey].push(game);
+        }
+        for(const key of Object.keys(nextGames)) {
+          nextGames[key].sort((a,b)=>a.minutesAgo-b.minutesAgo);
+          modeGames[key]=nextGames[key];
+          Object.assign(modeMeta[key],nextMeta[key]);
+        }
+        liveMode=true;
+        lastLiveQuery=query;
+        activeChampion=null;selectedChampion=null;visibleCount=8;
+        document.getElementById('player-name').innerHTML=safeText(body.account.gameName)+' <small>#'+safeText(body.account.tagLine)+'</small>';
+        const iconId=Number(body.account.profileIconId);
+        if(Number.isInteger(iconId)&&iconId>=0) {
+          document.querySelector('.avatar').innerHTML='<img alt="" src="https://ddragon.leagueoflegends.com/cdn/'+assetVersion+'/img/profileicon/'+iconId+'.png" onerror="this.remove()">';
+        }
+        document.getElementById('data-footnote').textContent='Live match and rank data from Riot Games API · most recent '+body.matches.length+' retrieved games. LP changes and all-time peak are unavailable until tracked in a separate database. Riftmax is not endorsed by Riot Games.';
+        const note=body.matches.length?'Live Riot data · '+body.matches.length+' recent games':'Live Riot account · no supported recent matches';
+        setApiStatus(note+' · '+body.account.gameName+'#'+body.account.tagLine);
+        setApiSettingsVisible(false);
+        renderEverything();
+      }catch(err) {
+        setApiStatus('API error: '+String(err.message||err),true);
+        toast('Riot API connection failed; existing data was kept.');
+      }finally {
+        refresh.disabled=false;formInput.disabled=false;
+      }
+    }
+    document.getElementById('show-api-settings').addEventListener('click',()=>{
+      const now=document.getElementById('api-settings').hidden;
+      setApiSettingsVisible(now);
+    });
+    document.getElementById('save-api-url').addEventListener('click',()=>{
+      const raw=document.getElementById('worker-url').value;
+      const cleaned=normalizeBase(raw);
+      if(!cleaned){setApiStatus('Enter a valid HTTPS Worker URL (not an API key).',true);return;}
+      workerBase=cleaned;
+      try{localStorage.setItem(WORKER_STORAGE,workerBase);}catch(_){}
+      setApiStatus('Worker URL saved. Search a player by Riot ID.');
+      setApiSettingsVisible(false);
+    });
+    document.getElementById('worker-url').value=workerBase;
+    if(workerBase) {
+      setApiStatus('Worker URL configured · search a Riot ID (Name#TAG)');
+      setApiSettingsVisible(false);
+    } else {
+      setApiSettingsVisible(false);
+    }
+    // Refresh Data Dragon assets independently; do not hold up a player lookup.
+    fetch('https://ddragon.leagueoflegends.com/api/versions.json').then(r=>r.ok?r.json():null)
+      .then(v=>{if(Array.isArray(v)&&/^\d+\.\d+\.\d+$/.test(v[0]))assetVersion=v[0];}).catch(()=>{});
+
     function renderEverything() {
       const ranked=modeMeta[activeMode].ranked;
       document.querySelectorAll('.mode-tab').forEach(button=>{
