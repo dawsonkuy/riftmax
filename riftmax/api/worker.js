@@ -13,6 +13,51 @@ const PLATFORM_REGION = {
   oc1:"sea",ph2:"sea",sg2:"sea",th2:"sea",tw2:"sea",vn2:"sea"
 };
 const QUEUES = {420:"solo",440:"flex",400:"draft",450:"aram"};
+const PAGE_SIZE=15;
+// 2026 Season 3 started July 29 at noon local server time on the NA platform.
+// Other platforms can override this in wrangler.toml when their server-local
+// start time differs. The API is inclusive at startTime.
+const DEFAULT_SEASON_START="2026-07-29T19:00:00Z";
+const DEFAULT_SEASON_LABEL="2026 Season 3";
+const TIER_ORDER=["IRON","BRONZE","SILVER","GOLD","PLATINUM","EMERALD","DIAMOND","MASTER","GRANDMASTER","CHALLENGER"];
+function rankingScore(x) {
+  const tier=TIER_ORDER.indexOf(String(x.tier||"").toUpperCase());
+  if(tier<0) return -1;
+  const div=({IV:0,III:1,II:2,I:3})[String(x.rank||"").toUpperCase()]??0;
+  return tier*100000+div*10000+Math.max(0,Number(x.leaguePoints)||0);
+}
+function seasonConfig(env) {
+  const raw=env.SEASON_START||DEFAULT_SEASON_START;
+  const ms=Date.parse(raw);
+  if(!Number.isFinite(ms))throw new ApiError(503,"Invalid Worker SEASON_START configuration.",null,"season-config");
+  const seconds=Math.floor(ms/1000);
+  if(seconds>Math.floor(Date.now()/1000)+86400)throw new ApiError(503,"Configured season start is in the future.",null,"season-config");
+  return {startTime:seconds,startISO:new Date(ms).toISOString(),label:env.SEASON_LABEL||DEFAULT_SEASON_LABEL};
+}
+async function trackedRankHistory(env,platform,puuid,ranks,start) {
+  if(!env.RANK_DB)return {enabled:false,peaks:{},startedAt:null};
+  const peaks={};
+  try {
+    for(const r of ranks.filter(x=>["RANKED_SOLO_5x5","RANKED_FLEX_SR"].includes(x.queueType))) {
+      const score=rankingScore(r);
+      if(score<0)continue;
+      const params=[platform,puuid,r.queueType];
+      const last=await env.RANK_DB.prepare("SELECT tier, division, lp FROM rank_snapshots WHERE platform=? AND puuid=? AND queue=? ORDER BY observed_at DESC, id DESC LIMIT 1").bind(...params).first();
+      if(!last||last.tier!==r.tier||last.division!==r.rank||last.lp!==r.leaguePoints) {
+        await env.RANK_DB.prepare("INSERT INTO rank_snapshots (platform,puuid,queue,tier,division,lp,score,observed_at) VALUES (?,?,?,?,?,?,?,?)")
+          .bind(...params,r.tier,r.rank,r.leaguePoints,score,new Date().toISOString()).run();
+      }
+      const peak=await env.RANK_DB.prepare("SELECT tier, division, lp, observed_at FROM rank_snapshots WHERE platform=? AND puuid=? AND queue=? ORDER BY score DESC, observed_at ASC LIMIT 1").bind(...params).first();
+      const earliest=await env.RANK_DB.prepare("SELECT MIN(observed_at) AS started FROM rank_snapshots WHERE platform=? AND puuid=? AND queue=?").bind(...params).first();
+      if(peak)peaks[r.queueType]={tier:peak.tier,rank:peak.division,leaguePoints:peak.lp,
+        observedAt:peak.observed_at,trackingSince:earliest?.started||start};
+    }
+    return {enabled:true,peaks,startedAt:start};
+  } catch (_) {
+    // Don't invent history when D1 has not been migrated or is temporarily unavailable.
+    return {enabled:false,peaks:{},startedAt:null,warning:"Rank snapshots unavailable; check the D1 binding and schema."};
+  }
+}
 const SPELLS = {1:"Cleanse",3:"Exhaust",4:"Flash",6:"Ghost",7:"Heal",11:"Smite",12:"Teleport",13:"Clarity",14:"Ignite",21:"Barrier",32:"Snowball"};
 const ORIGINS = ["https://htmlpreview.github.io"];
 const DEFAULT_HEADERS = {"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
@@ -32,7 +77,7 @@ function responseJson(obj,status=200,headers={}) {
 }
 function onlyText(v,max) {return typeof v==="string"&&v.length>0&&v.length<=max&&/^[\p{L}\p{N} _.\-]+$/u.test(v);}
 function safeNumber(n,defaultValue=0){return Number.isFinite(Number(n)) ? Number(n) : defaultValue;}
-function sortedIds(list) {return Array.isArray(list)?list.filter(x=>typeof x==="string"&&/^[A-Z0-9]+_\d+$/.test(x)).slice(0,20):[];}
+function sortedIds(list) {return Array.isArray(list)?list.filter(x=>typeof x==="string"&&/^[A-Z0-9]+_\d+$/.test(x)).slice(0,PAGE_SIZE):[];}
 async function riot(url,env,ctx,ttl=0,stage="riot") {
   const request=new Request(url,{headers:{"X-Riot-Token":env.RIOT_API_KEY,"Accept":"application/json"}});
   let cached=null;
@@ -69,8 +114,7 @@ async function riot(url,env,ctx,ttl=0,stage="riot") {
 function toMatch(raw,puuid,region) {
   const info=raw&&raw.info;
   if(!info||!Array.isArray(info.participants))return null;
-  const queue=QUEUES[info.queueId];
-  if(!queue)return null;
+  const queue=QUEUES[info.queueId]||"other";
   const player=info.participants.find(p=>p.puuid===puuid);
   if(!player)return null;
   const seconds=safeNumber(info.gameDuration);
@@ -84,7 +128,7 @@ function toMatch(raw,puuid,region) {
   const durationMinutes=Math.max(1,seconds/60);
   const cs=safeNumber(player.totalMinionsKilled)+safeNumber(player.neutralMinionsKilled);
   const result=remake?"remake":player.win?"win":"loss";
-  const names={solo:"Ranked Solo/Duo",flex:"Ranked Flex",draft:"Normal Draft",aram:"ARAM"};
+  const names={solo:"Ranked Solo/Duo",flex:"Ranked Flex",draft:"Normal Draft",aram:"ARAM",other:"Other · queue "+info.queueId};
   const spellIds=[player.summoner1Id,player.summoner2Id];
   return {
     id:raw.metadata&&raw.metadata.matchId,champion:player.championName||"Unknown",
@@ -110,6 +154,10 @@ async function profile(url,env,ctx) {
   const name=(url.searchParams.get("gameName")||"").trim();
   const tag=(url.searchParams.get("tagLine")||"").trim();
   if(!onlyText(name,20)||!onlyText(tag,10))throw new ApiError(400,"Enter a valid Riot ID and tag.");
+  const offsetValue=Number(url.searchParams.get("start")||0);
+  if(!Number.isSafeInteger(offsetValue)||offsetValue<0||offsetValue>25000)
+    throw new ApiError(400,"Invalid match history offset.",null,"pagination");
+  const season=seasonConfig(env);
   const regionalBase="https://"+region+".api.riotgames.com";
   const platformBase="https://"+platform+".api.riotgames.com";
   const user=await riot(regionalBase+"/riot/account/v1/accounts/by-riot-id/"+encodeURIComponent(name)+"/"+encodeURIComponent(tag),env,ctx,300,"account-lookup");
@@ -117,7 +165,7 @@ async function profile(url,env,ctx) {
   const puuid=user.puuid;
   const [rankResult,idsResult,summonerResult]=await Promise.allSettled([
     riot(platformBase+"/lol/league/v4/entries/by-puuid/"+encodeURIComponent(puuid),env,ctx,120,"ranked-entries"),
-    riot(regionalBase+"/lol/match/v5/matches/by-puuid/"+encodeURIComponent(puuid)+"/ids?start=0&count=20",env,ctx,120,"match-ids"),
+    riot(regionalBase+"/lol/match/v5/matches/by-puuid/"+encodeURIComponent(puuid)+"/ids?start="+offsetValue+"&count="+PAGE_SIZE+"&startTime="+season.startTime,env,ctx,120,"match-ids"),
     riot(platformBase+"/lol/summoner/v4/summoners/by-puuid/"+encodeURIComponent(puuid),env,ctx,3600,"summoner-profile")
   ]);
   // Do not present partial data as a successful all-updated snapshot.
@@ -133,15 +181,17 @@ async function profile(url,env,ctx) {
       if(result.status==="fulfilled") {
         const parsed=toMatch(result.value,puuid,region);
         if(parsed)items.push(parsed);
-      } else if(result.reason instanceof ApiError && result.reason.status===429) {
-        throw result.reason;
-      } else if(result.reason instanceof ApiError && result.reason.status===503) {
+      } else {
+        // Never mark the season as complete while silently dropping match details.
         throw result.reason;
       }
     }
   }
   items.sort((a,b)=>b.gameEndTimestamp-a.gameEndTimestamp);
   const ranks=Array.isArray(rankResult.value)?rankResult.value:[];
+  const history=offsetValue===0
+    ?await trackedRankHistory(env,platform,puuid,ranks,new Date().toISOString())
+    :{enabled:Boolean(env.RANK_DB),peaks:{},startedAt:null};
   return {
     source:"riot-api",live:true,generatedAt:new Date().toISOString(),
     region,platform,account:{gameName:user.gameName||name,tagLine:user.tagLine||tag,puuid,
@@ -151,8 +201,12 @@ async function profile(url,env,ctx) {
       wins:safeNumber(x.wins),losses:safeNumber(x.losses)
     })),
     matches:items,
-    warnings:["No per-match LP history, session LP change, or all-time peak is available from Match-V5.",
-      "Only the latest 20 available matches were requested; older match history is not complete."]
+    pagination:{start:offsetValue,count:ids.length,nextStart:offsetValue+ids.length,hasMore:ids.length===PAGE_SIZE},
+    season:{label:season.label,startsAt:season.startISO},
+    rankHistory:history,
+    warnings:["Season history requires pagination until hasMore=false; respect Riot rate limits.",
+      "Per-match LP changes and all-time historical peak cannot be reconstructed from Riot Match-V5.",
+      ...(history.warning?[history.warning]:[])]
   };
 }
 export default {
@@ -172,7 +226,8 @@ export default {
       const status=error instanceof ApiError?error.status:502;
       const msg=error instanceof ApiError?error.message:"Riot request failed. Check Worker logs.";
       return responseJson({error:msg,stage:error instanceof ApiError?error.stage:"unknown",
-        riotStatus:error instanceof ApiError?error.riotStatus:null},status,{
+        riotStatus:error instanceof ApiError?error.riotStatus:null,
+        retryAfter:error instanceof ApiError?error.retryAfter:null},status,{
         ...headers,...(error instanceof ApiError&&error.retryAfter?{"Retry-After":error.retryAfter}: {})
       });
     }
