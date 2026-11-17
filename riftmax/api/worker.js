@@ -17,7 +17,10 @@ const SPELLS = {1:"Cleanse",3:"Exhaust",4:"Flash",6:"Ghost",7:"Heal",11:"Smite",
 const ORIGINS = ["https://htmlpreview.github.io"];
 const DEFAULT_HEADERS = {"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
 class ApiError extends Error {
-  constructor(status,message,retryAfter) {super(message);this.status=status;this.retryAfter=retryAfter;}
+  constructor(status,message,retryAfter,stage,riotStatus) {
+    super(message);this.name="ApiError";this.status=status;this.retryAfter=retryAfter;
+    this.stage=stage||"riot";this.riotStatus=riotStatus||null;
+  }
 }
 function cors(origin,env) {
   const allowed = (env.ALLOWED_ORIGINS||"").split(",").map(x=>x.trim()).filter(Boolean);
@@ -30,7 +33,7 @@ function responseJson(obj,status=200,headers={}) {
 function onlyText(v,max) {return typeof v==="string"&&v.length>0&&v.length<=max&&/^[\p{L}\p{N} _.\-]+$/u.test(v);}
 function safeNumber(n,defaultValue=0){return Number.isFinite(Number(n)) ? Number(n) : defaultValue;}
 function sortedIds(list) {return Array.isArray(list)?list.filter(x=>typeof x==="string"&&/^[A-Z0-9]+_\d+$/.test(x)).slice(0,20):[];}
-async function riot(url,env,ctx,ttl=0) {
+async function riot(url,env,ctx,ttl=0,stage="riot") {
   const request=new Request(url,{headers:{"X-Riot-Token":env.RIOT_API_KEY,"Accept":"application/json"}});
   let cached=null;
   if(ttl && typeof caches!=="undefined" && caches.default) {
@@ -38,11 +41,23 @@ async function riot(url,env,ctx,ttl=0) {
     cached=await caches.default.match(cacheKey);
     if(cached) return cached.json();
   }
-  const res=await fetch(request);
+  let res;
+  try {res=await fetch(request);}
+  catch (_) {throw new ApiError(502,"Could not connect to Riot servers.",null,stage);}
   if(!res.ok) {
     const retryAfter=res.headers.get("Retry-After");
-    let message=res.status===429?"Riot rate limit reached. Try again later.":res.status===403?"Riot API key expired, invalid, or not permitted.":res.status===404?"Riot account or match not found.":"Riot API request failed.";
-    throw new ApiError(res.status===403?503:res.status,message,retryAfter);
+    let message;
+    switch(res.status) {
+      case 400: message="Riot rejected this request as malformed (HTTP 400)."; break;
+      case 401: message="Riot rejected the API key (HTTP 401). Verify the Cloudflare secret matches your active Riot key."; break;
+      case 403: message="Riot denied access (HTTP 403). The key may be expired, revoked or missing permission."; break;
+      case 404: message="Riot returned no matching account or resource (HTTP 404). Check Riot ID, tag and platform."; break;
+      case 429: message="Riot rate limit reached (HTTP 429). Observe the Retry-After interval."; break;
+      default: message="Riot returned HTTP "+res.status+".";
+    }
+    // No raw upstream body, upstream URL, account secrets, or request headers are exposed.
+    const status=res.status===401||res.status===403?503:res.status>=500?502:res.status;
+    throw new ApiError(status,message,retryAfter,stage,res.status);
   }
   const payload=await res.json();
   if(ttl && ctx && typeof caches!=="undefined" && caches.default) {
@@ -97,13 +112,13 @@ async function profile(url,env,ctx) {
   if(!onlyText(name,20)||!onlyText(tag,10))throw new ApiError(400,"Enter a valid Riot ID and tag.");
   const regionalBase="https://"+region+".api.riotgames.com";
   const platformBase="https://"+platform+".api.riotgames.com";
-  const user=await riot(regionalBase+"/riot/account/v1/accounts/by-riot-id/"+encodeURIComponent(name)+"/"+encodeURIComponent(tag),env,ctx,300);
+  const user=await riot(regionalBase+"/riot/account/v1/accounts/by-riot-id/"+encodeURIComponent(name)+"/"+encodeURIComponent(tag),env,ctx,300,"account-lookup");
   if(!user||typeof user.puuid!=="string")throw new ApiError(502,"Riot account response missing player ID.");
   const puuid=user.puuid;
   const [rankResult,idsResult,summonerResult]=await Promise.allSettled([
-    riot(platformBase+"/lol/league/v4/entries/by-puuid/"+encodeURIComponent(puuid),env,ctx,120),
-    riot(regionalBase+"/lol/match/v5/matches/by-puuid/"+encodeURIComponent(puuid)+"/ids?start=0&count=20",env,ctx,120),
-    riot(platformBase+"/lol/summoner/v4/summoners/by-puuid/"+encodeURIComponent(puuid),env,ctx,3600)
+    riot(platformBase+"/lol/league/v4/entries/by-puuid/"+encodeURIComponent(puuid),env,ctx,120,"ranked-entries"),
+    riot(regionalBase+"/lol/match/v5/matches/by-puuid/"+encodeURIComponent(puuid)+"/ids?start=0&count=20",env,ctx,120,"match-ids"),
+    riot(platformBase+"/lol/summoner/v4/summoners/by-puuid/"+encodeURIComponent(puuid),env,ctx,3600,"summoner-profile")
   ]);
   // Do not present partial data as a successful all-updated snapshot.
   if(rankResult.status!=="fulfilled")throw rankResult.reason;
@@ -113,7 +128,7 @@ async function profile(url,env,ctx) {
   // Sequential small batches keep a development key from being overwhelmed.
   for(let i=0;i<ids.length;i+=3) {
     const slice=ids.slice(i,i+3);
-    const results=await Promise.allSettled(slice.map(id=>riot(regionalBase+"/lol/match/v5/matches/"+encodeURIComponent(id),env,ctx,86400)));
+    const results=await Promise.allSettled(slice.map(id=>riot(regionalBase+"/lol/match/v5/matches/"+encodeURIComponent(id),env,ctx,86400,"match-details")));
     for(const result of results) {
       if(result.status==="fulfilled") {
         const parsed=toMatch(result.value,puuid,region);
@@ -156,7 +171,8 @@ export default {
     } catch(error) {
       const status=error instanceof ApiError?error.status:502;
       const msg=error instanceof ApiError?error.message:"Riot request failed. Check Worker logs.";
-      return responseJson({error:msg},status,{
+      return responseJson({error:msg,stage:error instanceof ApiError?error.stage:"unknown",
+        riotStatus:error instanceof ApiError?error.riotStatus:null},status,{
         ...headers,...(error instanceof ApiError&&error.retryAfter?{"Retry-After":error.retryAfter}: {})
       });
     }
