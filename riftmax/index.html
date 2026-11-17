@@ -732,6 +732,7 @@
       const box=document.getElementById('match-list');
       box.innerHTML=shown.map(m=>{
         const status=m.result==='win'?'Victory':m.result==='loss'?'Defeat':'Remake';
+        const gameLabel=liveMode?safeText(m.mode):meta.label;
         const score=(players,title,cls,isAlly)=>'<div><div class="team-title '+cls+'">'+title+'</div>'+
           players.map((p,i)=>'<div class="team-player '+(isAlly&&i===0?'me':'')+'"><div class="player-identity">'+championIcon(p[0])+
             '<span class="player-name">'+p[0]+'</span></div><small>'+p[1]+'</small></div>').join('')+'</div>';
