@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#191b1f" />
+  <meta name="theme-color" content="#000000" />
   <title>Riftmax — Summoner Profile UI Concept</title>
   <style>
     :root {
       color-scheme: dark;
-      --bg: #191b1f;
+      --bg: #000000;
       --card: #23262b;
       --card-raised: #292d33;
       --line: #353a40;
@@ -43,8 +43,7 @@
     .api-config-row button { flex-shrink:0; border:1px solid #527c5f; border-radius:9px; background:#314a3a; color:#d4f7dc; font-size:12px; font-weight:750; padding:0 14px; }
     .api-helper { font-size:10px; line-height:1.55; color:var(--muted); margin-top:4px; }
     .nav { max-width: 1110px; min-height: 83px; margin: 0 auto; padding: 14px 27px; display: flex; align-items: center; gap: 26px; }
-    .logo { font-size: 23px; font-weight: 840; letter-spacing: -1.25px; white-space: nowrap; }
-    .logo span { color: var(--green); }
+    .logo { color:#388cff; font-size:28px; font-weight:900; letter-spacing:-1.8px; line-height:1; white-space:nowrap; }
     .nav-links { display: flex; align-items: center; gap: 26px; }
     .nav-link { background: none; color: #a4aab2; border: none; padding: 8px 0; font-size: 13px; font-weight: 600; }
     .nav-link:hover, .nav-link.active { color: var(--text); }
@@ -62,6 +61,15 @@
     .player-name { font-size: 23px; letter-spacing: -.65px; font-weight: 780; overflow-wrap: anywhere; }
     .player-name small { font-size: 14px; color: var(--muted); font-weight: 500; letter-spacing: -.1px; }
     .rank-row { margin-top: 8px; display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+    /* Official League of Legends client rank-emblem artwork, hosted by CommunityDragon.
+       These assets have large transparent margins; crop the center for the profile UI. */
+    .rank-emblem-slot { display:inline-flex; flex-shrink:0; }
+    .rank-emblem-slot[hidden], .rank-emblem-frame[hidden] { display:none !important; }
+    .rank-emblem-frame { width:70px; height:62px; display:inline-block; position:relative; overflow:hidden; flex-shrink:0; pointer-events:none; }
+    .rank-emblem-frame img { display:block; width:380%; height:auto; max-width:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
+    .rank-emblem-frame.small { width:29px; height:27px; vertical-align:middle; }
+    .rank-emblem-frame.small img { width:380%; }
+    .rank-row:has(.rank-emblem-slot:not([hidden])) { gap:10px; }
     .rank-mark { padding: 5px 8px; border-radius: 7px; background: #3a3530; color: #efc994; font-size: 12px; font-weight: 800; }
     .rank-name { font-size: 13px; color: var(--secondary); }
     .record { margin-top: 9px; font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
@@ -113,7 +121,7 @@
     #ranked-history[hidden], #sessions-title[hidden] { display:none !important; }
     .sessions-title { margin-bottom:4px; }
     .rank-mark.is-unranked { background:#30383b; color:#b9c4cd; }
-    .peak-rank { color:var(--muted); font-size:11px; margin-top:8px; }
+    .peak-rank { color:var(--muted); font-size:11px; margin-top:8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
     .peak-rank strong { color:var(--secondary); }
     .performance { margin-top:12px; padding:17px 19px 19px; }
     .performance-head { display:flex; justify-content:space-between; gap:8px; align-items:baseline; margin-bottom:14px; }
@@ -318,7 +326,7 @@
 <body>
   <header class="site-header">
     <nav class="nav" aria-label="Main navigation">
-      <div class="logo">rift<span>max</span></div>
+      <div class="logo" aria-label="Riftmax">RM</div>
       <div class="nav-links">
         <button class="nav-link" data-preview="Home">Home</button>
         <button class="nav-link active" aria-current="page">Profiles</button>
@@ -364,7 +372,7 @@
       </div>
       <div class="profile-main">
         <div class="player-name" id="player-name">Summoner <small>#NA1</small></div>
-        <div class="rank-row" id="rank-row"><span class="rank-mark" id="rank-mark">G III</span><span class="rank-name" id="rank-name">Gold III · 82 LP</span></div>
+        <div class="rank-row" id="rank-row"><span class="rank-emblem-slot" id="rank-emblem-current" aria-hidden="true"></span><span class="rank-mark" id="rank-mark">G III</span><span class="rank-name" id="rank-name">Gold III · 82 LP</span></div>
         <div class="peak-rank" id="peak-rank">All-time peak: <strong>Gold I · 74 LP</strong> <span class="demo-marker">(demo)</span></div>
         <div class="record"><span><strong>112W</strong> / <strong>90L</strong></span><span>·</span><span>55.4% win rate</span></div>
       </div>
@@ -547,6 +555,21 @@
     let seasonFirstId='';
     let seasonGames=new Map();
     let seasonLastError='';
+    // Riot game-client emblem artwork from a pinned CommunityDragon asset release.
+    // Image requests contain no API credentials.
+    const RANK_EMBLEM_BASE='https://raw.communitydragon.org/16.2/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-';
+    const RANK_TIERS=['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+    function rankTier(rank) {
+      const tier=String(rank||'').trim().split(/\s+/)[0].toUpperCase();
+      return RANK_TIERS.includes(tier)?tier:null;
+    }
+    function rankEmblem(rank,small=false) {
+      const tier=rankTier(rank);
+      if(!tier)return '';
+      return '<span class="rank-emblem-frame'+(small?' small':'')+'">' +
+        '<img alt="" loading="lazy" decoding="async" src="'+RANK_EMBLEM_BASE+tier.toLowerCase()+'.png" onerror="this.parentElement.hidden=true">' +
+        '</span>';
+    }
     let savedPeaks={};
     let peakTrackingEnabled=false;
     let seasonStartIso='';
@@ -687,13 +710,26 @@
       document.getElementById('rank-mark').textContent=m.ranked?m.rankShort:'—';
       document.getElementById('rank-mark').classList.toggle('is-unranked',!m.ranked);
       document.getElementById('rank-name').textContent=m.ranked?(m.current==='Unranked'?'Unranked':m.current+' · '+m.lp+' LP'):(liveMode?m.label+' · '+modeGames[activeMode].length+' games loaded':m.label+' · No ranked LP');
-      document.getElementById('peak-rank').hidden=!m.ranked;
+
+      // Only display the emblem for a verified, recognized ranked tier.
+      const emblemSlot=document.getElementById('rank-emblem-current');
+      const currentTier=m.ranked?rankTier(m.current):null;
+      emblemSlot.hidden=!currentTier;
+      emblemSlot.innerHTML=currentTier?rankEmblem(currentTier):'';
+
+      const peakNode=document.getElementById('peak-rank');
+      peakNode.hidden=!m.ranked;
       if(m.ranked) {
         const queue=activeMode==='solo'?'RANKED_SOLO_5x5':'RANKED_FLEX_SR';
         const peak=savedPeaks[queue];
-        document.getElementById('peak-rank').innerHTML=liveMode
-          ?(peak?'Tracked peak: <strong>'+safeText(peak.tier)+' '+safeText(peak.rank)+' · '+Number(peak.leaguePoints)+' LP</strong> <span class="demo-marker">(since '+safeText(String(peak.trackingSince).slice(0,10))+')</span>':'All-time peak: <strong>Unavailable</strong> · '+(peakTrackingEnabled?'No ranked snapshot yet':'Enable rank history tracking'))
-          :'All-time peak: <strong>'+m.allTimePeak+'</strong> <span class="demo-marker">(demo)</span>';
+        peakNode.innerHTML=liveMode
+          ?(peak
+            ?'<span>Tracked peak:</span>'+rankEmblem(peak.tier,true)+
+              '<strong>'+safeText(peak.tier)+' '+safeText(peak.rank)+' · '+Number(peak.leaguePoints)+' LP</strong>'+
+              '<span class="demo-marker">(since '+safeText(String(peak.trackingSince).slice(0,10))+')</span>'
+            :'<span>All-time peak:</span><strong>Unavailable</strong> · '+(peakTrackingEnabled?'No ranked snapshot yet':'Enable rank history tracking'))
+          :'<span>All-time peak:</span>'+rankEmblem(m.allTimePeak,true)+
+            '<strong>'+m.allTimePeak+'</strong> <span class="demo-marker">(demo)</span>';
       }
       document.querySelector('.record').innerHTML='<span><strong>'+w+'W</strong> / <strong>'+l+'L</strong></span><span>·</span><span>'+(w+l?(w/(w+l)*100).toFixed(1)+'% win rate':'No ranked record')+(liveMode?'':' · demo season')+'</span>';
     }
