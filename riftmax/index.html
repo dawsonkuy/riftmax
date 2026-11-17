@@ -348,7 +348,7 @@
     .team-items { grid-area:items; display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:3px; }
     .team-items .item-icon { width:24px; height:24px; border-radius:5px; }
     .team-items .item-empty { width:24px; height:24px; border:1px solid #ffffff22; background:#11171b77; border-radius:5px; }
-    .team-legacy { font-size:10px; color:#a8b2bf; grid-area:stats / stats / items / items; }
+    .team-legacy { font-size:10px; color:#a8b2bf; grid-column:1 / -1; grid-row:2; }
     @media(max-width:610px) {
       .team-player { grid-template-areas:"identity kda" "stats stats" "items items"; padding:9px 10px; }
       .team-items { justify-content:flex-start; }
@@ -1015,6 +1015,9 @@
         return;
       }
       const preservedScroll=panel.scrollTop;
+      const oldFocus=document.activeElement;
+      const focusClose=oldFocus&&oldFocus.matches&&oldFocus.matches('[data-close-champion]');
+      const focusMatchId=oldFocus&&oldFocus.dataset?oldFocus.dataset.openMatchId:null;
       const g=selected,winRate=Math.round(100*g.w/g.games),kda=((g.k+g.a)/Math.max(g.d,1)).toFixed(2),
         csm=(g.cs/g.minutes).toFixed(1),avgDmg=(g.damage/g.games/1000).toFixed(1),
         avgVision=(g.vision/g.games).toFixed(1),avgGold=(g.gold/g.games/1000).toFixed(1),
@@ -1080,6 +1083,11 @@
           '</div></section>';
       panel.hidden=false;
       panel.scrollTop=preservedScroll;
+      // Import updates shouldn't silently lose keyboard focus inside the popup.
+      const restore=focusClose?panel.querySelector('[data-close-champion]'):
+        focusMatchId?[...panel.querySelectorAll('[data-open-match-id]')]
+          .find(el=>el.dataset.openMatchId===focusMatchId):null;
+      if(restore)restore.focus({preventScroll:true});
     }
     function renderChampions() {
       const data=championSummary();
