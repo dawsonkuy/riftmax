@@ -58,33 +58,43 @@
     .nav-search input::placeholder { color: #89919a; }
     .page { width: min(100% - 40px, 690px); margin: 55px auto 90px; }
     .surface { border-radius: var(--radius); border: 1px solid var(--line); background: var(--card); }
-    .profile { padding:20px 22px; display:grid; grid-template-columns:96px minmax(0,1fr) auto; align-items:center; column-gap:19px; min-height:178px; }
-    .profile-identity { width:96px; display:flex; flex-direction:column; align-items:center; justify-content:center; align-self:center; }
-    .avatar { width:78px; height:78px; flex:0 0 78px; border-radius:50%; background: radial-gradient(circle at 32% 25%, #657260, #313d3c 58%, #1b2727); border: 3px solid #414e4a; box-shadow: inset 0 0 0 5px #212528; display: grid; place-items: center; overflow: hidden; }
+    .profile { position:relative; padding:19px 20px; display:grid; grid-template-columns:80px minmax(0,1fr); align-items:center; gap:18px; min-height:176px; }
+    .profile-identity { width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .avatar { width:78px; height:78px; flex:0 0 78px; border-radius:50%; background:radial-gradient(circle at 32% 25%,#657260,#313d3c 58%,#1b2727); border:3px solid #414e4a; box-shadow:inset 0 0 0 5px #212528; display:grid; place-items:center; overflow:hidden; }
     .avatar svg { width:52px; height:52px; opacity:.91; }
-    .profile-main { min-width:0; display:flex; flex-direction:column; justify-content:center; align-self:center; gap:0; }
-    .player-name { font-size:23px; line-height:1.25; letter-spacing:-.8px; font-weight:800; overflow-wrap:anywhere; }
+    .profile-main { display:flex; flex-direction:column; justify-content:center; min-width:0; width:100%; }
+    .player-name { font-size:23px; line-height:1.25; letter-spacing:-.8px; font-weight:800; overflow-wrap:anywhere; margin-bottom:13px; padding-right:83px; }
     .player-name small { font-size:12px; color:var(--muted); font-weight:600; letter-spacing:0; white-space:nowrap; }
-    .rank-row { margin-top:1px; display:flex; flex-direction:column; gap:0; align-items:center; text-align:center; width:100%; }
-    .rank-row[hidden] { display:none !important; }
-    .rank-compact-info { display:flex; flex-direction:row; align-items:baseline; justify-content:center; gap:5px; white-space:nowrap; }
-    .rank-mark[hidden] { display:none !important; }
-    /* Official League of Legends client rank-emblem artwork, hosted by CommunityDragon.
-       These assets have large transparent margins; crop the center for the profile UI. */
+    .profile-metrics { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1.28fr) minmax(0,1fr) minmax(0,.9fr); gap:8px; width:100%; align-items:stretch; }
+    .stat-card { min-width:0; min-height:83px; background:#1a1e23; border:1px solid #39414a; border-radius:11px; padding:11px 10px 10px; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; }
+    .stat-label { display:block; color:#98a4af; font-size:9px; line-height:1.3; font-weight:800; letter-spacing:.045em; text-transform:uppercase; white-space:nowrap; }
+    .stat-value { color:#f3f5f7; font-size:15px; font-weight:800; letter-spacing:-.4px; line-height:1.2; white-space:nowrap; }
+    .rank-row { background:#202c3b; border-color:#435977; }
+    .rank-row[hidden], .peak-rank[hidden] { display:none !important; }
+    .rank-card-body { min-height:45px; display:flex; align-items:center; gap:0; }
     .rank-emblem-slot { display:inline-flex; flex-shrink:0; }
     .rank-emblem-slot[hidden], .rank-emblem-frame[hidden] { display:none !important; }
-    .rank-emblem-frame { width:56px; height:50px; display:inline-block; position:relative; overflow:hidden; flex-shrink:0; pointer-events:none; }
+    /* Official client artwork is padded; crop the transparent margin in the frame. */
+    .rank-emblem-frame { width:45px; height:46px; display:inline-block; position:relative; overflow:hidden; flex-shrink:0; pointer-events:none; }
     .rank-emblem-frame img { display:block; width:380%; height:auto; max-width:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
-    .rank-emblem-frame.small { width:29px; height:27px; vertical-align:middle; }
+    .rank-emblem-frame.small { width:29px; height:29px; vertical-align:middle; }
     .rank-emblem-frame.small img { width:380%; }
-    .rank-row:has(.rank-emblem-slot:not([hidden])) { gap:0; }
-    .rank-mark { padding:0; border-radius:0; background:transparent; color:#ffffff; font-size:14px; font-weight:800; letter-spacing:.015em; line-height:1.2; }
-    .rank-name { font-size:11px; font-weight:700; color:#c7d2dc; line-height:1.2; }
-    .record { margin-top:12px; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .record strong { color:#f1f4f6; font-weight:800; }
-    .record > span:nth-child(2) { display:none; }
-    .record > span:first-child, .record > span:last-child { background:#292d33; border:1px solid #3a4149; border-radius:8px; padding:6px 9px; }
-    .refresh { align-self:start; justify-self:end; color:var(--secondary); border:1px solid var(--line); background:var(--card-raised); border-radius:9px; padding:8px 11px; display:flex; gap:7px; align-items:center; font-size:11px; }
+    .rank-compact-info { display:flex; flex-direction:column; justify-content:center; min-width:0; gap:2px; white-space:nowrap; }
+    .rank-mark[hidden] { display:none !important; }
+    .rank-mark { padding:0; background:none; color:#fff; font-size:17px; font-weight:800; letter-spacing:.01em; line-height:1.1; }
+    .rank-name { font-size:11px; font-weight:800; color:#d0dbe7; line-height:1.1; }
+    .peak-rank { margin:0; width:100%; max-width:none; }
+    .peak-content { display:flex; align-items:center; flex-wrap:wrap; gap:3px 5px; min-height:40px; font-size:11px; line-height:1.2; }
+    .peak-content strong { color:#f0f2f5; font-weight:800; font-size:11px; overflow-wrap:anywhere; }
+    .peak-content .demo-marker { font-size:9px; color:#7f8b97; }
+    .peak-content .peak-date { color:#8996a4; font-size:9px; line-height:1.25; width:100%; }
+    .record, .win-rate { margin:0; font-size:initial; }
+    .record .stat-value { font-size:13px; }
+    .win-rate .stat-value { font-size:18px; }
+    .profile-metrics:has(.rank-row[hidden]) { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .profile-metrics:has(.rank-row[hidden]) .record,
+    .profile-metrics:has(.rank-row[hidden]) .win-rate { min-height:74px; }
+    .refresh { position:absolute; right:17px; top:17px; align-self:auto; color:var(--secondary); border:1px solid var(--line); background:var(--card-raised); border-radius:9px; padding:8px 11px; display:flex; gap:7px; align-items:center; font-size:11px; }
     .refresh:hover { border-color: #6a8373; color: var(--text); }
     .refresh svg { width: 13px; height: 13px; }
     .lp-panel { margin-top: 12px; padding: 19px 22px 14px; overflow: hidden; }
@@ -110,7 +120,7 @@
     .last-session-record { font-size: 11px; color: var(--secondary); }
 
     /* Riftmax profile insights */
-    .mode-selector { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; padding:5px; background:#22262b; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
+    .mode-selector { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; padding:5px; background:#22262b; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
     .season-import { margin-bottom:13px; padding:13px 15px; border-color:#46544b; }
     .season-import[hidden] { display:none !important; }
     .season-import-top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
@@ -131,10 +141,6 @@
     #ranked-history[hidden], #sessions-title[hidden] { display:none !important; }
     .sessions-title { margin-bottom:4px; }
     .rank-mark.is-unranked { background:#30383b; color:#b9c4cd; }
-    .peak-rank { color:var(--muted); font-size:11px; margin-top:12px; padding:7px 10px; width:fit-content; max-width:100%; min-height:37px; background:#1a1e23; border:1px solid #363c43; border-radius:10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; line-height:1.3; }
-    .peak-rank[hidden] { display:none !important; }
-    .peak-rank strong { color:#e4e9ed; font-weight:800; }
-    .peak-rank > span:first-child { color:#98a3ae; font-weight:700; }
     .performance { margin-top:12px; padding:17px 19px 19px; }
     .performance-head { display:flex; justify-content:space-between; gap:8px; align-items:baseline; margin-bottom:14px; }
     .performance-subtitle { font-size:11px; color:var(--muted); }
@@ -322,21 +328,24 @@
       .nav-link { font-size: 11px; }
       .nav-link:nth-child(1), .nav-link:nth-child(3) { display: none; }
       .page { width: min(100% - 26px, 690px); }
-      .profile { padding:16px 13px; grid-template-columns:76px minmax(0,1fr); column-gap:12px; row-gap:0; min-height:155px; position:relative; }
-      .profile-identity { width:76px; align-self:center; }
+      .profile { padding:15px 13px; grid-template-columns:69px minmax(0,1fr); gap:10px; align-items:start; min-height:0; }
+      .profile-identity { width:69px; min-height:65px; }
       .avatar { width:65px; height:65px; flex-basis:65px; }
-      .rank-emblem-frame { width:45px; height:41px; }
-      .rank-emblem-frame.small { width:26px; height:25px; }
-      .rank-mark { font-size:12px; }
-      .rank-name { font-size:10px; }
       .avatar svg { width:44px; height:44px; }
-      .profile-main { padding-right:4px; }
-      .player-name { font-size:18px; padding-right:30px; }
+      .profile-main { display:contents; }
+      .player-name { grid-column:2; align-self:center; font-size:18px; padding-right:30px; margin:0; }
       .player-name small { font-size:11px; }
-      .peak-rank { font-size:10px; padding:6px 8px; margin-top:10px; }
-      .record { gap:5px; font-size:10px; margin-top:9px; }
-      .record > span:first-child, .record > span:last-child { padding:5px 7px; }
-      .refresh { position:absolute; top:12px; right:12px; font-size:0; padding:8px; }
+      .profile-metrics { grid-column:1 / -1; grid-row:2; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:2px; }
+      .stat-card { min-height:81px; padding:10px 11px; }
+      .rank-card-body { justify-content:flex-start; }
+      .rank-emblem-frame { width:47px; height:44px; }
+      .rank-emblem-frame.small { width:27px; height:27px; }
+      .rank-mark { font-size:16px; }
+      .rank-name { font-size:11px; }
+      .stat-value { font-size:16px; }
+      .record .stat-value { font-size:14px; }
+      .win-rate .stat-value { font-size:19px; }
+      .refresh { top:12px; right:12px; font-size:0; padding:8px; }
       .refresh svg { width: 15px; height: 15px; }
       .lp-panel { padding: 17px 15px 14px; }
       .match-button { gap: 10px; padding: 13px 10px; }
@@ -379,7 +388,6 @@
       </div>
     </div>
     <div class="mode-selector" role="group" aria-label="Game mode">
-      <button type="button" class="mode-tab" data-mode="all" aria-pressed="false"><span class="mode-name">All</span><span class="mode-type">Season</span></button>
       <button type="button" class="mode-tab active" data-mode="solo" aria-pressed="true"><span class="mode-name">Solo/Duo</span><span class="mode-type">Ranked</span></button>
       <button type="button" class="mode-tab" data-mode="flex" aria-pressed="false"><span class="mode-name">Flex</span><span class="mode-type">Ranked</span></button>
       <button type="button" class="mode-tab" data-mode="draft" aria-pressed="false"><span class="mode-name">Draft</span><span class="mode-type">Normal</span></button>
@@ -397,18 +405,33 @@
         <div class="avatar" aria-hidden="true">
           <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="23" r="12" fill="#c3d0bd"/><path d="M10 60c0-14 9-24 22-24s22 10 22 24" fill="#c3d0bd"/></svg>
         </div>
-        <div class="rank-row" id="rank-row" aria-label="Current rank">
-          <span class="rank-emblem-slot" id="rank-emblem-current" aria-hidden="true"></span>
-          <div class="rank-compact-info">
-            <span class="rank-mark" id="rank-mark">III</span>
-            <span class="rank-name" id="rank-name">82 LP</span>
-          </div>
-        </div>
       </div>
       <div class="profile-main">
         <div class="player-name" id="player-name">Summoner <small>#NA1</small></div>
-        <div class="peak-rank" id="peak-rank">All-time peak: <strong>Gold I · 74 LP</strong> <span class="demo-marker">(demo)</span></div>
-        <div class="record"><span><strong>112W</strong> / <strong>90L</strong></span><span>·</span><span>55.4% win rate</span></div>
+        <div class="profile-metrics">
+          <div class="stat-card rank-row" id="rank-row" aria-label="Current rank">
+            <span class="stat-label">Current Rank</span>
+            <div class="rank-card-body">
+              <span class="rank-emblem-slot" id="rank-emblem-current" aria-hidden="true"></span>
+              <span class="rank-compact-info">
+                <span class="rank-mark" id="rank-mark">III</span>
+                <span class="rank-name" id="rank-name">82 LP</span>
+              </span>
+            </div>
+          </div>
+          <div class="stat-card peak-rank" id="peak-rank">
+            <span class="stat-label">Peak</span>
+            <div class="peak-content"><strong>Gold I · 74 LP</strong><span class="demo-marker">Demo</span></div>
+          </div>
+          <div class="stat-card record" id="profile-record">
+            <span class="stat-label">Season Record</span>
+            <strong class="stat-value" id="record-value">112W / 90L</strong>
+          </div>
+          <div class="stat-card win-rate" id="profile-win-rate">
+            <span class="stat-label">Win Rate</span>
+            <strong class="stat-value" id="win-rate-value">55.4%</strong>
+          </div>
+        </div>
       </div>
       <button class="refresh" id="refresh" title="Refresh profile (demo)" aria-label="Refresh profile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 4v7h-7"/></svg> Update
@@ -740,20 +763,17 @@
       });
     }
     function renderProfile() {
-      const m=modeMeta[activeMode],w=m.season[0],l=m.season[1];
-      const currentTier=m.ranked?rankTier(m.current):null;
+      const m=modeMeta[activeMode],currentTier=m.ranked?rankTier(m.current):null;
       const rankPanel=document.getElementById('rank-row');
       rankPanel.hidden=!currentTier;
-      if(m.ranked&&currentTier) {
-        const division=String(m.current||'').toUpperCase().split(/\s+/).find(v=>/^(IV|III|II|I)$/.test(v))||'';
+      if(currentTier) {
+        const division=String(m.current||'').toUpperCase().split(/\\s+/).find(v=>/^(IV|III|II|I)$/.test(v))||'';
         const divisionNode=document.getElementById('rank-mark');
         divisionNode.hidden=!division;
         divisionNode.textContent=division;
         document.getElementById('rank-name').textContent=m.lp+' LP';
         rankPanel.setAttribute('aria-label','Current rank: '+m.current+', '+m.lp+' LP');
       }
-
-      // Only display the emblem for a verified, recognized ranked tier.
       const emblemSlot=document.getElementById('rank-emblem-current');
       emblemSlot.hidden=!currentTier;
       emblemSlot.innerHTML=currentTier?rankEmblem(currentTier):'';
@@ -763,16 +783,27 @@
       if(m.ranked) {
         const queue=activeMode==='solo'?'RANKED_SOLO_5x5':'RANKED_FLEX_SR';
         const peak=savedPeaks[queue];
-        peakNode.innerHTML=liveMode
+        const peakDetails=liveMode
           ?(peak
-            ?'<span>Tracked peak:</span>'+rankEmblem(peak.tier,true)+
+            ?rankEmblem(peak.tier,true)+
               '<strong>'+safeText(peak.tier)+' '+safeText(peak.rank)+' · '+Number(peak.leaguePoints)+' LP</strong>'+
-              '<span class="demo-marker">(since '+safeText(String(peak.trackingSince).slice(0,10))+')</span>'
-            :'<span>All-time peak:</span><strong>Unavailable</strong> · '+(peakTrackingEnabled?'No ranked snapshot yet':'Enable rank history tracking'))
-          :'<span>All-time peak:</span>'+rankEmblem(m.allTimePeak,true)+
-            '<strong>'+m.allTimePeak+'</strong> <span class="demo-marker">(demo)</span>';
+              '<span class="peak-date">Tracked since '+safeText(String(peak.trackingSince||'').slice(0,10))+'</span>'
+            :'<strong>Unavailable</strong><span class="peak-date">'+
+              (peakTrackingEnabled?'No rank snapshot yet':'Tracking not enabled')+'</span>')
+          :rankEmblem(m.allTimePeak,true)+'<strong>'+safeText(m.allTimePeak)+'</strong>'+
+            '<span class="peak-date">Demo</span>';
+        peakNode.innerHTML='<span class="stat-label">Peak</span><div class="peak-content">'+peakDetails+'</div>';
       }
-      document.querySelector('.record').innerHTML='<span><strong>'+w+'W</strong> / <strong>'+l+'L</strong></span><span>·</span><span>'+(w+l?(w/(w+l)*100).toFixed(1)+'% win rate':'No ranked record')+(liveMode?'':' · demo season')+'</span>';
+
+      // Current ranked queue records come from Riot League-V4. All other live
+      // modes show their imported-match record rather than invented full totals.
+      const record=liveMode&&m.ranked&&Array.isArray(m.riotRecord)?m.riotRecord:m.season;
+      const w=Number(record[0])||0,l=Number(record[1])||0;
+      const label=liveMode?(m.ranked&&Array.isArray(m.riotRecord)?'Ranked Record':'Loaded Record'):'Season Record';
+      document.querySelector('#profile-record .stat-label').textContent=label;
+      document.getElementById('record-value').textContent=w+'W / '+l+'L';
+      document.getElementById('win-rate-value').textContent=w+l?(w/(w+l)*100).toFixed(1)+'%':'—';
+      document.querySelector('#profile-win-rate .stat-label').textContent='Win Rate';
     }
     function renderPerformance() {
       const games=playable(activeMode).slice(0,20),w=games.filter(m=>m.result==='win').length,l=games.length-w;
@@ -1290,7 +1321,7 @@
         refreshSeasonGames();
         liveMode=true;
         lastLiveQuery=query;
-        activeMode='all';
+        activeMode='solo';
         activeChampion=null;selectedChampion=null;visibleCount=8;
         document.getElementById('player-name').innerHTML=safeText(body.account.gameName)+' <small>#'+safeText(body.account.tagLine)+'</small>';
         const iconId=Number(body.account.profileIconId);
