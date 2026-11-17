@@ -991,7 +991,11 @@
       try {
         const response=await fetch(url.toString(),{method:'GET',mode:'cors',headers:{Accept:'application/json'}});
         const body=await response.json();
-        if(!response.ok)throw Error(body.error||('Riot backend returned HTTP '+response.status));
+        if(!response.ok) {
+          const step=typeof body.stage==='string'?' ['+body.stage+']':'';
+          const status=Number.isInteger(body.riotStatus)?' (Riot HTTP '+body.riotStatus+')':'';
+          throw Error((body.error||('Riot backend returned HTTP '+response.status))+step+status);
+        }
         if(body.source!=='riot-api'||!Array.isArray(body.matches)||!Array.isArray(body.ranks)||!body.account)
           throw Error('Riot Worker returned an incomplete response.');
         // Only switch away from demo mode after all necessary data has been verified.
