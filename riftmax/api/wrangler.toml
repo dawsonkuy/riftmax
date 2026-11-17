@@ -1,0 +1,11 @@
+name = "riftmax-riot"
+main = "worker.js"
+compatibility_date = "2026-11-17"
+workers_dev = true
+
+[vars]
+# Comma-separated production/browser origins; the HTMLPreview origin is built into worker.js for local prototyping.
+ALLOWED_ORIGINS = "http://localhost:8788,http://127.0.0.1:8788"
+
+[secrets]
+required = ["RIOT_API_KEY"]
