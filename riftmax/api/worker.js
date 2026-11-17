@@ -124,7 +124,24 @@ function toMatch(raw,puuid,region) {
   const players=info.participants;
   const team=players.filter(p=>p.teamId===player.teamId);
   const enemy=players.filter(p=>p.teamId!==player.teamId);
-  const scoreboard=(arr)=>arr.map(p=>[p.championName||"Unknown",safeNumber(p.kills)+"/"+safeNumber(p.deaths)+"/"+safeNumber(p.assists)]);
+  // Full, sanitized per-player scoreboard from Riot Match-V5. Match data
+  // is historical (not live-game intel) and includes no account secrets.
+  const scoreboard=(arr)=>arr.map(p=>({
+    champion:p.championName||"Unknown",
+    name:p.riotIdGameName||p.summonerName||p.championName||"Unknown",
+    tagLine:p.riotIdTagline||"",
+    isSelf:p.puuid===puuid,
+    win:Boolean(p.win),
+    kills:safeNumber(p.kills),deaths:safeNumber(p.deaths),assists:safeNumber(p.assists),
+    cs:safeNumber(p.totalMinionsKilled)+safeNumber(p.neutralMinionsKilled),
+    damage:safeNumber(p.totalDamageDealtToChampions),
+    damageTaken:safeNumber(p.totalDamageTaken),
+    gold:safeNumber(p.goldEarned),
+    vision:safeNumber(p.visionScore),
+    level:safeNumber(p.champLevel),
+    items:[0,1,2,3,4,5,6].map(i=>safeNumber(p["item"+i])),
+    spells:[safeNumber(p.summoner1Id),safeNumber(p.summoner2Id)]
+  }));
   const durationMinutes=Math.max(1,seconds/60);
   const cs=safeNumber(player.totalMinionsKilled)+safeNumber(player.neutralMinionsKilled);
   const result=remake?"remake":player.win?"win":"loss";
