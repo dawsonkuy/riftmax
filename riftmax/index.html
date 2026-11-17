@@ -767,7 +767,7 @@
       const rankPanel=document.getElementById('rank-row');
       rankPanel.hidden=!currentTier;
       if(currentTier) {
-        const division=String(m.current||'').toUpperCase().split(/\\s+/).find(v=>/^(IV|III|II|I)$/.test(v))||'';
+        const division=String(m.current||'').toUpperCase().split(/\s+/).find(v=>/^(IV|III|II|I)$/.test(v))||'';
         const divisionNode=document.getElementById('rank-mark');
         divisionNode.hidden=!division;
         divisionNode.textContent=division;
