@@ -68,6 +68,13 @@
     .chart { margin: 9px -6px 0; height: 115px; position: relative; }
     .chart svg { width: 100%; height: 100%; overflow: visible; display: block; }
     .chart-labels { margin-top: 4px; display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
+    .last-session { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--subtle-line); }
+    .last-session-label { font-size: 12px; font-weight: 700; color: var(--secondary); }
+    .last-session-note { color: var(--muted); font-size: 10px; margin-top: 4px; }
+    .last-session-stats { display: flex; align-items: baseline; justify-content: flex-end; flex-wrap: wrap; gap: 9px; text-align: right; }
+    .last-session-lp { font-size: 17px; font-weight: 800; color: var(--green); }
+    .last-session-lp.negative { color: var(--red); }
+    .last-session-record { font-size: 11px; color: var(--secondary); }
     .content-tabs { display: flex; align-items: stretch; gap: 0; border-bottom: 1px solid var(--line); margin: 28px 1px 16px; }
     .tab { flex: 1 1 50%; min-width: 0; text-align: center; background: none; border: none; border-bottom: 2px solid transparent; padding: 0 12px 12px; margin-bottom: -1px; color: #8b949f; font-size: 13px; font-weight: 650; }
     .tab.active { color: var(--text); border-color: var(--green); }
@@ -192,6 +199,10 @@
       </div>
       <div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><g id="chart-points"></g></svg></div>
       <div class="chart-labels"><span id="chart-start">10 games ago</span><span>Most recent game</span></div>
+      <div class="last-session" aria-label="Last play session LP change (illustrative)">
+        <div><div class="last-session-label">Last session</div><div class="last-session-note">Latest play session · demo</div></div>
+        <div class="last-session-stats"><strong class="last-session-lp" id="last-session-lp">+44 LP</strong><span class="last-session-record" id="last-session-record">2W · 0L</span></div>
+      </div>
     </section>
     <div class="content-tabs" role="tablist" aria-label="Profile sections"><button role="tab" id="tab-matches" aria-selected="true" class="tab active">Match History</button><button role="tab" id="tab-champions" aria-selected="false" class="tab">Champions</button></div>
     <section id="matches-view" role="tabpanel" aria-labelledby="tab-matches">
