@@ -79,8 +79,9 @@
     /* Riftmax profile insights */
     .mode-bar { display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 13px; }
     .mode-bar label { color:var(--secondary); font-size:12px; font-weight:750; }
-    .mode-bar select { background:var(--card); color:var(--text); border:1px solid var(--line); padding:10px 34px 10px 13px; border-radius:10px; font:600 12px inherit; max-width:75%; cursor:pointer; }
+    .mode-bar select { background:var(--card); color:var(--text); border:1px solid var(--line); padding:10px 34px 10px 13px; border-radius:10px; font-size:12px; font-weight:600; font-family:inherit; max-width:75%; cursor:pointer; }
     .mode-bar select:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+    .rank-mark.is-unranked { background:#30383b; color:#b9c4cd; }
     .peak-rank { color:var(--muted); font-size:11px; margin-top:8px; }
     .peak-rank strong { color:var(--secondary); }
     .performance { margin-top:12px; padding:17px 19px 19px; }
@@ -515,6 +516,7 @@
     function renderProfile() {
       const m=modeMeta[activeMode],w=m.season[0],l=m.season[1];
       document.getElementById('rank-mark').textContent=m.ranked?m.rankShort:'—';
+      document.getElementById('rank-mark').classList.toggle('is-unranked',!m.ranked);
       document.getElementById('rank-name').textContent=m.ranked?m.current+' · '+m.lp+' LP':m.label+' · No ranked LP';
       document.getElementById('peak-rank').hidden=!m.ranked;
       if(m.ranked) document.getElementById('peak-rank').innerHTML='Season peak: <strong>'+m.peak+'</strong>';
@@ -660,6 +662,7 @@
     pointsEl.addEventListener('focusin',e=>{const dot=e.target.closest('.chart-pip');if(dot)showDot(dot);});
     pointsEl.addEventListener('focusout',e=>{if(e.target.closest('.chart-pip'))document.getElementById('chart-tooltip').hidden=true;});
     pointsEl.addEventListener('click',e=>{const dot=e.target.closest('.chart-pip');if(dot)showDot(dot);});
+    pointsEl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const dot=e.target.closest('.chart-pip');if(dot){e.preventDefault();showDot(dot);}}});
     document.getElementById('champions-list').addEventListener('click',e=>{
       const card=e.target.closest('[data-champion]');if(!card)return;
       activeChampion=card.dataset.champion;visibleCount=8;
