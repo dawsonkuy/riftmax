@@ -31,22 +31,50 @@ The UI sorts by rounded Riftmax Score descending, then unrounded win-quality con
 
 **Calibration limitations:** In this UI prototype, match data is invented and each champion is given a representative position using a static lookup. The benchmark numbers are heuristics, not Riot or population-validated data. Production should derive actual roles from matches and use separately calibrated baselines by role, rank, queue and patch. Score is an optional explanatory personal stat, not a verified measure of skill or matchmaking value.
 
-## Riot API integration plan
+## Riot API backend — ready for deployment
 
-See https://developer.riotgames.com/ and the official LoL documentation at https://developer.riotgames.com/docs/lol. **Do not put the Riot API key in this HTML prototype, a browser request, or GitHub.**
+Riftmax now includes a separate Cloudflare Worker at `api/worker.js`, configuration at `api/wrangler.toml`, and a frontend that can query it by Riot ID. No Riot key is stored in the repository.
 
-1. Sign in to the Riot Developer Portal and generate a development key (temporary, expires every 24 hours). Before public release, register Riftmax and apply for an approved production key.
-2. Run a private backend or Cloudflare Worker using the key as a secret (for Cloudflare, `wrangler secret put RIOT_API_KEY`). Expose only validated, rate-limited Riftmax endpoints to the browser.
-3. Search Riot ID (game name + tag) using Account-v1 `GET /riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}` on `americas` / `europe` / `asia` as appropriate, then use the returned PUUID as the stable player identifier.
-4. Retrieve ranked entries from League-v4 on the player's platform host (for NA: `na1.api.riotgames.com`) and recent match IDs/details from Match-v5 on a regional host (for NA: `americas.api.riotgames.com`). Match-V5 ID list: `GET /lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count=20`, details: `GET /lol/match/v5/matches/{matchId}`.
-5. Normalize Riot queue IDs into Solo/Duo, Flex, Draft, ARAM. Aggregate champion game counts, win rates and per-minute metrics from real matches. Build sessions from game timestamps.
-6. **Store ranked snapshots in a database** (PUUID, platform, queue, tier, division, leaguePoints, timestamp, optional match ID). Riot Match-V5 does not provide verified per-match LP gains/losses, and an API key cannot retrieve a complete historical LP graph retroactively. Only graph verified changes and label gaps as missing history. Store all-time peak from tracked snapshots, not from a fabricated rank.
-7. Cache game data and respect HTTP 429 `Retry-After`, per-route rate limits and current Riot API policies. For images use Riot Data Dragon assets, ideally current version rather than an old hard-coded patch.
+### Deploy the Worker (Windows PowerShell)
 
-The UI is a static demonstration, not yet connected to Riot. An API key alone is not sufficient to make the prototype live.
+1. On https://developer.riotgames.com/ regenerate your **development API key**. Keys shared in chat should be considered exposed; Riot development keys also expire every 24 hours.
+2. From an existing cloned Riftmax repository, update files and enter the Worker directory:
+
+```powershell
+cd $HOME\riftmax
+git pull
+cd .\riftmax\api
+npx.cmd wrangler login
+npx.cmd wrangler deploy
+npx.cmd wrangler secret put RIOT_API_KEY
+```
+
+3. **Only when prompted by Wrangler**, paste the newly generated key into the terminal. Do not type the key into a GitHub file or into the website. Wrangler will deploy an updated version with the encrypted secret.
+4. Open the deployment URL printed by Wrangler, adding `/api/health`. It should return JSON with `ok: true` and `configured: true`.
+5. Open the [online Riftmax preview](https://htmlpreview.github.io/?https://github.com/dawsonkuy/riftmax/blob/main/riftmax/index.html). Click **Connect Riot backend**, enter the Worker base URL (just `https://...workers.dev`, not `/api/health`), and click **Save URL**. Search for a Riot ID in the format `Name#TAG`. The region selector is in the backend settings.
+
+**Important:** The existing PowerShell `start .\riftmax\index.html` command opens a `file://` page, which is not an approved cross-origin source for the Worker. Use the online preview or host the HTML locally on `http://localhost:8788` instead. The Worker allows `https://htmlpreview.github.io`, `http://localhost:8788`, and `http://127.0.0.1:8788`; add your real website origin to the `ALLOWED_ORIGINS` value in `api/wrangler.toml` before production deployment.
+
+### What the integration really does
+
+- GET `/api/health`: check Worker and secret configuration (without revealing the key).
+- GET `/api/profile?gameName=Example&tagLine=NA1&platform=na1`: uses Account-V1, League-V4, Summoner-V4 and Match-V5; returns sanitized account, rank, and up to 20 normalized matches. Riot requests use the server-side `RIOT_API_KEY` Worker secret.
+- The frontend now loads that data when you search `Name#TAG`, updates the current rank and record, filters matches by queue, computes champion scores, and supports match-detail expansion. If a lookup fails, existing data stays visible and an error is shown.
+- It explicitly **does not invent LP gains, all-time peaks or graph history** when connected to real Riot data. Those require a separate, durable rank snapshot database and reliable backfill policy. A `0 LP` or fake session change is never used as a placeholder.
+- Matches and account data are cached for limited periods; Riot 429 rate-limit replies are surfaced. This is a **personal development prototype**, not a production-scale rate-limited service. Add per-client throttling, a permanent datastore and Riot product registration before opening the Worker to many users.
+
+### Keeping it running
+
+A Riot development key expires every 24 hours. After regenerating the key, run `npx.cmd wrangler secret put RIOT_API_KEY` again in the `riftmax/api` directory. For a publicly launched Riftmax, apply for Riot's appropriate approved production key and comply with its published policies.
+
+Official docs: https://developer.riotgames.com/docs/lol and https://developers.cloudflare.com/workers/configuration/secrets/.
+
+## Remaining feature work
+
+Build queue-aware ranked snapshots with durable storage, verify rank promotion boundaries, add rate-limiting/WAF rules, improve queue coverage, and calibrate champion-scoring benchmarks against actual matches and roles.
 
 ## Important data limitations
 
-**All player statistics, games, rank history, game times, item builds, LP changes, and sessions in this prototype are invented sample data.** There is no live Riot or GRID API connection. Ranked LP deltas are not part of standard Riot match-history responses; production LP tracking and verified all-time peak ranks will require recorded ranked snapshots, queue-specific history, and careful handling of rank promotion/demotion boundaries. Session grouping currently uses demo game times and is scoped to the selected mode; production session detection should be based on chronological game timelines across queues and must handle missing match history. Detailed item builds and summoner spells also require Riot data.
+**The initial demo data is illustrative. Once the backend is deployed and a Riot ID is searched successfully, live account, match, and ranked stats replace the demo. There is no GRID integration.** Ranked LP deltas are not part of standard Riot match-history responses; production LP tracking and verified all-time peak ranks will require recorded ranked snapshots, queue-specific history, and careful handling of rank promotion/demotion boundaries. Session grouping currently uses demo game times and is scoped to the selected mode; production session detection should be based on chronological game timelines across queues and must handle missing match history. Detailed item builds and summoner spells also require Riot data.
 
 The UI is a design prototype, independent of Earfolio and BestPad.
