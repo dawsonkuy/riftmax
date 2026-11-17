@@ -72,23 +72,23 @@
     .stat-card > .stat-label { align-self:center; text-align:center; margin-bottom:4px; }
     .stat-label { display:block; color:#9eacb9; font-size:10px; line-height:1.25; font-weight:800; letter-spacing:.045em; text-transform:uppercase; }
     .stat-value { color:#f3f5f7; font-size:18px; font-weight:800; letter-spacing:-.5px; line-height:1.2; white-space:nowrap; }
-    .rank-row { background:#202c3b; border-color:#486b92; padding:7px 9px 8px; }
+    .rank-row { background:#202c3b; border-color:#486b92; padding:7px 9px 8px; display:grid; grid-template-rows:minmax(0,1fr) auto; align-items:stretch; justify-items:stretch; }
     .rank-row[hidden], .peak-rank[hidden] { display:none !important; }
-    .rank-card-body { flex:1; display:flex; align-items:center; justify-content:center; min-height:86px; gap:7px; margin:0 0 2px; }
-    .rank-emblem-slot { display:inline-flex; flex-shrink:0; }
+    .rank-card-body { display:grid; grid-template-columns:76px max-content; align-items:center; justify-content:center; justify-items:center; width:100%; min-width:0; min-height:86px; gap:7px; padding:0; margin:0; }
+    .rank-emblem-slot { display:flex; align-items:center; justify-content:center; width:76px; height:76px; flex-shrink:0; }
     .rank-emblem-slot[hidden], .rank-emblem-frame[hidden] { display:none !important; }
     /* Official rank art contains transparency; crop inside a controlled frame. */
-    .rank-emblem-frame { width:83px; height:79px; display:inline-block; position:relative; overflow:hidden; flex-shrink:0; pointer-events:none; }
+    .rank-emblem-frame { width:76px; height:76px; display:inline-block; position:relative; overflow:hidden; flex-shrink:0; pointer-events:none; }
     .rank-emblem-frame img { display:block; width:380%; height:auto; max-width:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
     .rank-emblem-frame.small { width:27px; height:26px; vertical-align:middle; }
     .rank-emblem-frame.small img { width:380%; }
-    .rank-compact-info { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; min-width:0; gap:5px; }
+    .rank-compact-info { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; min-width:0; gap:5px; }
     .rank-mark[hidden] { display:none !important; }
     .rank-mark { padding:0; background:none; color:#fff; font-size:28px; line-height:1.04; font-weight:800; letter-spacing:-.9px; white-space:nowrap; }
     .rank-mark.medium-tier { font-size:23px; letter-spacing:-.7px; }
     .rank-mark.long-tier { font-size:18px; letter-spacing:-.5px; }
     .rank-name { font-size:16px; line-height:1.12; font-weight:800; color:#d2dfed; }
-    .peak-rank { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:4px 6px; min-width:0; min-height:35px; padding:5px 0 0; border-top:1px solid #536274; line-height:1.2; }
+    .peak-rank { display:flex; align-items:center; justify-content:center; justify-self:stretch; text-align:center; flex-wrap:wrap; gap:4px 6px; min-width:0; min-height:35px; padding:5px 0 0; border-top:1px solid #536274; line-height:1.2; }
     .peak-label { font-size:10px; color:#aab6c4; font-weight:750; white-space:nowrap; }
     .peak-content { min-width:0; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:3px 5px; line-height:1.2; }
     .peak-content strong { font-size:11px; font-weight:800; color:#f0f2f5; overflow-wrap:anywhere; }
@@ -397,8 +397,9 @@
       .profile-metrics { grid-template-columns:minmax(0,1fr); gap:7px; }
       .stat-card { min-height:0; padding:8px 8px 9px; }
       .stat-label { font-size:9px; }
-      .rank-card-body { min-height:65px; margin-bottom:1px; gap:4px; }
-      .rank-emblem-frame { width:62px; height:59px; }
+      .rank-card-body { grid-template-columns:60px max-content; min-height:69px; gap:5px; margin-bottom:1px; }
+      .rank-emblem-slot { width:60px; height:60px; }
+      .rank-emblem-frame { width:60px; height:60px; }
       .rank-emblem-frame.small { width:23px; height:22px; }
       .rank-mark { font-size:22px; letter-spacing:-.7px; }
       .rank-mark.medium-tier { font-size:18px; }
