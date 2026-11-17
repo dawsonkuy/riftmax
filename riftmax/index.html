@@ -134,6 +134,23 @@
     .champion-tile.selected { border-color:#5a7669; background:#293530; }
     .app-icon { width:100%; max-width:116px; aspect-ratio:1/1; border-radius:22%; overflow:hidden; display:block; background:linear-gradient(135deg,#4b5d61,#1c2428); box-shadow:0 5px 13px #0005, inset 0 0 0 1px #ffffff1f; position:relative; }
     .app-icon::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit; border:1px solid #ffffff22; box-shadow:inset 0 1px 0 #ffffff14; }
+    .champion-rank, .champion-score { position:absolute; z-index:2; font-size:11px; line-height:1.2; font-weight:850; padding:5px 6px; background:#111b1dee; color:#e8f2ef; border:1px solid #a9b6b544; box-shadow:0 2px 7px #0008; pointer-events:none; }
+    .champion-rank { top:5px; left:5px; border-radius:7px; }
+    .champion-score { bottom:5px; right:5px; color:#90efb3; border-radius:7px; }
+    .champion-score::after { content:" /100"; color:#b8c6c0; font-weight:500; font-size:8px; }
+    .champion-rank.top-rank { background:#476f50e6; color:#ecffe8; }
+    .champion-ranking-note { font-size:11px; color:var(--secondary); padding:0 1px 6px; line-height:1.5; }
+    .champion-scoreline { display:flex; justify-content:space-between; gap:11px; align-items:center; flex-wrap:wrap; border:1px solid #3c5748; background:#24352c; margin-top:13px; border-radius:10px; padding:12px; }
+    .champion-scoreline strong { color:#a6edbd; font-size:23px; letter-spacing:-.5px; }
+    .champion-scoreline span { font-size:11px; color:var(--secondary); }
+    .champ-score-breakdown { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px; }
+    .champ-breakdown-cell { background:#22282a; border:1px solid var(--subtle-line); border-radius:10px; padding:9px 9px 10px; }
+    .champ-breakdown-cell small { color:var(--muted); font-size:10px; display:block; }
+    .champ-breakdown-cell strong { color:var(--text); font-size:15px; display:block; margin-top:6px; }
+    .champ-breakdown-cell .breakdown-track { margin-top:7px; height:4px; border-radius:99px; background:#3c4546; overflow:hidden; }
+    .champ-breakdown-cell .breakdown-fill { height:100%; border-radius:99px; background:#6bd69b; }
+    .champ-algorithm-note { margin:10px 0 1px; font-size:10px; line-height:1.55; color:var(--muted); }
+
     .app-icon .champ-icon { width:100%; height:100%; border:0; border-radius:0; display:grid; place-items:center; font-size:27px; }
     .app-icon .champ-icon img { width:100%; height:100%; border:0; border-radius:0; }
     .champion-tile-name { display:block; max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:12px; font-weight:750; margin-top:3px; }
@@ -176,6 +193,12 @@
       .champion-tile-games { font-size:9px; }
       .champion-tile-win { font-size:11px; }
       .app-icon { border-radius:20%; }
+      .champion-rank, .champion-score { font-size:9px; padding:3px 4px; }
+      .champion-score::after { font-size:7px; }
+      .champ-score-breakdown { gap:5px; }
+      .champ-breakdown-cell { padding:8px 5px; }
+      .champ-breakdown-cell small { font-size:9px; }
+      .champ-breakdown-cell strong { font-size:13px; }
       .champ-expand { padding:12px; }
       .champ-detail-grid { gap:5px; }
       .champ-detail-stat { padding:9px 5px; }
@@ -327,7 +350,7 @@
       <label class="show-remakes"><input type="checkbox" id="remakes" /> Show remake matches</label>
       <button class="load-more" id="load-more">Load more matches</button>
     </section>
-    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · selected mode</span></div><div id="champions-list" class="champions-grid"></div><div id="champion-details" class="surface champ-expand" hidden aria-live="polite"></div></section>
+    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · ranked by Riftmax Score</span></div><div class="champion-ranking-note">Scores reward proven wins, games played and role-adjusted performance. Tap any champion for details. <span class="demo-marker">Demo data</span></div><div id="champions-list" class="champions-grid"></div><div id="champion-details" class="surface champ-expand" hidden aria-live="polite"></div></section>
     <div class="footnote">Riftmax UI prototype. Sessions, player stats, ranks, LP, items and games are illustrative.<br />No live Riot or GRID API connection in this mockup.</div>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -627,6 +650,56 @@
         document.querySelector('#matches-view .toolbar').appendChild(clear);
       } else if(!activeChampion&&clear) clear.remove();
     }
+    // Riftmax Champion Score v1: ranks a player's champion proficiency in the selected queue.
+    // This is NOT a global strength or tier-list score. Benchmarks are illustrative, not Riot-certified.
+    const championRoles = { Ahri:'mid', Orianna:'mid', Yasuo:'mid', Jinx:'adc', LeeSin:'jungle', Thresh:'support' };
+    const roleBenchmarks = {
+      mid: { kda:3.0, csMin:7.0, damageMin:720, visionMin:0.55 },
+      adc: { kda:2.8, csMin:7.4, damageMin:800, visionMin:0.40 },
+      jungle: { kda:3.0, csMin:5.5, damageMin:570, visionMin:0.75 },
+      support: { kda:3.0, csMin:1.7, damageMin:320, visionMin:1.40 },
+      top: { kda:2.6, csMin:6.8, damageMin:650, visionMin:0.45 },
+      // Unknown positions use neutral benchmarks; production should derive the lane from each actual game.
+      unknown: { kda:3.0, csMin:6.2, damageMin:650, visionMin:0.60 },
+      aram: { kda:3.5, damageMin:1050 }
+    };
+    const SCORE_WEIGHTS={ wins:0.60, games:0.25, performance:0.15 };
+    function clampScore(x) { return Math.max(0,Math.min(100,x)); }
+    function metricGrade(value,reference) {
+      return clampScore(50 + 50*Math.log2(Math.max(0.01,value)/reference));
+    }
+    function scoreChampion(g,mode) {
+      const n=g.games;
+      // Beta(10,10) prior: as if every champion starts with 10 wins and 10 losses.
+      const adjustedWinRate=(g.w+10)/(n+20);
+      const winScore=clampScore(50+250*(adjustedWinRate-.5));
+      // Capped logarithmic experience rewards sustained play, not endless grinding.
+      const experienceScore=100*Math.min(1,Math.log1p(n)/Math.log(101));
+      const role=mode==='aram'?'aram':(championRoles[g.name]||'unknown');
+      const b=roleBenchmarks[role];
+      const kda=(g.k+g.a)/Math.max(1,g.d);
+      const dpm=g.damage/Math.max(1,g.minutes);
+      const csm=g.cs/Math.max(1,g.minutes);
+      const vpm=g.vision/Math.max(1,g.minutes);
+      // ARAM does not use regular Summoner's Rift role/vision comparisons.
+      const rawPerformance=mode==='aram'
+        ? 0.55*metricGrade(kda,b.kda)+0.45*metricGrade(dpm,b.damageMin)
+        : 0.40*metricGrade(kda,b.kda)+0.20*metricGrade(csm,b.csMin)+
+          0.25*metricGrade(dpm,b.damageMin)+0.15*metricGrade(vpm,b.visionMin);
+      // Shrink highly volatile single-game performance toward 50, too.
+      const performanceScore=50+(rawPerformance-50)*n/(n+12);
+      const total=SCORE_WEIGHTS.wins*winScore+SCORE_WEIGHTS.games*experienceScore+
+                  SCORE_WEIGHTS.performance*performanceScore;
+      return {
+        total:Math.round(clampScore(total)),
+        adjustedWinRate,winScore,experienceScore,performanceScore,
+        role:role==='adc'?'Bot':role==='aram'?'ARAM':role.charAt(0).toUpperCase()+role.slice(1),
+        // More granular values retained to explain and eventually audit scores.
+        metrics:{kda,csm,dpm,vpm},
+        weighted:{wins:SCORE_WEIGHTS.wins*winScore,games:SCORE_WEIGHTS.games*experienceScore,
+          performance:SCORE_WEIGHTS.performance*performanceScore}
+      };
+    }
     function championSummary() {
       const groups=new Map();
       for(const m of playable(activeMode)) {
@@ -635,7 +708,11 @@
         g.games++;g.w+=m.result==='win'?1:0;g.k+=m.kills;g.d+=m.deaths;g.a+=m.assists;
         g.cs+=m.cs;g.minutes+=m.durationMinutes;g.damage+=m.damage;g.vision+=m.vision;g.gold+=m.gold;
       }
-      return [...groups.values()].sort((a,b)=>b.games-a.games||a.name.localeCompare(b.name));
+      return [...groups.values()].map(g=>({...g,scoring:scoreChampion(g,activeMode)}))
+        .sort((a,b)=>b.scoring.total-a.scoring.total||
+          b.scoring.weighted.wins-a.scoring.weighted.wins||
+          b.games-a.games||a.name.localeCompare(b.name))
+        .map((g,i)=>({...g,position:i+1}));
     }
     function renderChampionDetails(data) {
       const panel=document.getElementById('champion-details');
@@ -648,17 +725,34 @@
       const g=selected, winRate=Math.round(100*g.w/g.games), kda=((g.k+g.a)/Math.max(g.d,1)).toFixed(2),
         csm=(g.cs/g.minutes).toFixed(1), avgDmg=(g.damage/g.games/1000).toFixed(1),
         avgVision=(g.vision/g.games).toFixed(1), avgGold=(g.gold/g.games/1000).toFixed(1),
-        kdaLine=[g.k,g.d,g.a].map(v=>(v/g.games).toFixed(1)).join(' / ');
+        kdaLine=[g.k,g.d,g.a].map(v=>(v/g.games).toFixed(1)).join(' / '),
+        rating=g.scoring;
       const details=[
         ['Win rate',winRate+'%'],['Record',g.w+'W · '+(g.games-g.w)+'L'],['KDA',kda],
         ['Avg K / D / A',kdaLine],['CS / min',csm],['Avg damage',avgDmg+'k'],
         ['Avg vision',avgVision],['Avg gold',avgGold+'k'],['Games',String(g.games)]
       ];
+      const factors=[
+        {label:'Adjusted win rate · 60%',value:rating.winScore},
+        {label:'Experience · 25%',value:rating.experienceScore},
+        {label:'Performance · 15%',value:rating.performanceScore}
+      ];
       panel.innerHTML=
         '<div class="champ-expand-top"><div class="champ-expand-icon">'+championIcon(g.name)+'</div>'+
         '<div><div class="champ-expand-name">'+prettyChampion(g.name)+'</div>'+
-        '<div class="champ-expand-meta">'+modeMeta[activeMode].label+' · champion breakdown (demo)</div></div>'+
+        '<div class="champ-expand-meta">'+modeMeta[activeMode].label+' · '+rating.role+' · champion breakdown (demo)</div></div>'+
         '<button type="button" class="champ-expand-close" data-close-champion aria-label="Close champion details">×</button></div>'+
+        '<div class="champion-scoreline"><div><strong>#'+g.position+' · '+rating.total+'/100</strong>'+
+        '<div style="font-size:11px;color:var(--secondary);margin-top:3px">Riftmax Champion Score</div></div>'+
+        '<span>Adjusted WR: '+(rating.adjustedWinRate*100).toFixed(1)+'% · Actual WR: '+winRate+'%</span></div>'+
+        '<div class="champ-score-breakdown">'+factors.map(f=>
+          '<div class="champ-breakdown-cell"><small>'+f.label+'</small><strong>'+Math.round(f.value)+'/100</strong>'+
+          '<div class="breakdown-track"><div class="breakdown-fill" style="width:'+f.value.toFixed(1)+'%"></div></div></div>').join('')+'</div>'+
+        '<div class="champ-algorithm-note">Score = 60% adjusted win rate + 25% games + 15% role-adjusted performance. '+
+        'Win rate starts with a 20-game 50% prior; game volume has diminishing returns (capped at 100 games); '+
+        'KDA, damage, CS and vision are compared with illustrative role benchmarks, and performance is sample-size adjusted. '+
+        (activeMode==='aram'?'ARAM performance uses KDA and damage only. ':'')+
+        'Not a global champion power ranking.</div>'+
         '<div class="champ-detail-grid">'+details.map(stat=>
           '<div class="champ-detail-stat"><small>'+stat[0]+'</small><strong>'+stat[1]+'</strong></div>').join('')+
         '</div><div class="champ-expand-actions"><button type="button" class="champ-view-matches" data-view-champion="'+g.name+'">View matches →</button></div>';
@@ -672,8 +766,11 @@
         const selected=g.name===selectedChampion;
         return '<button type="button" class="champion-tile'+(selected?' selected':'')+
           '" data-champion="'+g.name+'" aria-expanded="'+selected+'" aria-controls="champion-details" aria-label="'+
-          prettyChampion(g.name)+', '+g.games+' games, '+rate+' percent win rate. '+(selected?'Collapse':'Expand')+' details">'+
-          '<span class="app-icon">'+championIcon(g.name)+'</span>'+
+          'Rank '+g.position+', '+prettyChampion(g.name)+', score '+g.scoring.total+' of 100, '+g.games+' games, '+rate+' percent win rate. '+
+          (selected?'Collapse':'Expand')+' details">'+
+          '<span class="app-icon">'+championIcon(g.name)+
+          '<span class="champion-rank'+(g.position===1?' top-rank':'')+'">#'+g.position+'</span>'+
+          '<span class="champion-score" title="Riftmax Score '+g.scoring.total+'/100">'+g.scoring.total+'</span></span>'+
           '<span class="champion-tile-name" title="'+prettyChampion(g.name)+'">'+prettyChampion(g.name)+'</span>'+
           '<span class="champion-tile-games">'+g.games+' '+(g.games===1?'game':'games')+'</span>'+
           '<span class="champion-tile-win'+(rate<50?' low':'')+'">'+rate+'% WR</span></button>';
