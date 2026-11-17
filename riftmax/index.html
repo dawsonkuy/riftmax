@@ -92,7 +92,15 @@
     .last-session-record { font-size: 11px; color: var(--secondary); }
 
     /* Riftmax profile insights */
-    .mode-selector { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; padding:5px; background:#22262b; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
+    .mode-selector { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; padding:5px; background:#22262b; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
+    .season-import { margin-bottom:13px; padding:13px 15px; border-color:#46544b; }
+    .season-import[hidden] { display:none !important; }
+    .season-import-top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .season-import-top strong { font-size:12px; }
+    #season-import-status { margin-top:5px; color:var(--secondary); font-size:11px; }
+    .season-progress-track { height:5px; border-radius:8px; overflow:hidden; margin:12px 0 8px; background:var(--line); }
+    #season-progress-fill { width:0%; height:100%; background:var(--green); transition:width .3s ease; }
+    @media (max-width:560px) { .mode-selector { display:flex; overflow-x:auto; } .mode-tab { min-width:84px !important; } .season-import-top { align-items:flex-start; } }
     .mode-tab { min-width:0; border:1px solid transparent; border-radius:9px; padding:10px 5px 9px; color:var(--secondary); background:transparent; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-family:inherit; cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
     .mode-tab:hover { background:#30363a; color:var(--text); }
     .mode-tab.active { background:#343d40; border-color:#507361; color:var(--text); box-shadow:inset 0 -2px var(--green); }
@@ -335,11 +343,19 @@
       </div>
     </div>
     <div class="mode-selector" role="group" aria-label="Game mode">
+      <button type="button" class="mode-tab" data-mode="all" aria-pressed="false"><span class="mode-name">All</span><span class="mode-type">Season</span></button>
       <button type="button" class="mode-tab active" data-mode="solo" aria-pressed="true"><span class="mode-name">Solo/Duo</span><span class="mode-type">Ranked</span></button>
       <button type="button" class="mode-tab" data-mode="flex" aria-pressed="false"><span class="mode-name">Flex</span><span class="mode-type">Ranked</span></button>
       <button type="button" class="mode-tab" data-mode="draft" aria-pressed="false"><span class="mode-name">Draft</span><span class="mode-type">Normal</span></button>
       <button type="button" class="mode-tab" data-mode="aram" aria-pressed="false"><span class="mode-name">ARAM</span><span class="mode-type">Casual</span></button>
+      <button type="button" class="mode-tab" data-mode="other" aria-pressed="false"><span class="mode-name">Other</span><span class="mode-type">Modes</span></button>
     </div>
+    <section id="season-import" class="season-import surface" hidden aria-label="Current season match import">
+      <div class="season-import-top"><div><strong id="season-import-label">2026 Season 3 · match history</strong><div id="season-import-status" aria-live="polite">Preparing season history…</div></div>
+      <button id="season-import-action" type="button" class="api-settings-button">Pause import</button></div>
+      <div class="season-progress-track"><div id="season-progress-fill"></div></div>
+      <div class="api-helper">Riftmax imports Riot matches page by page. Keep the tab open until it says complete. Season 3 started July 29, 2026. Riot rate limits may require resuming.</div>
+    </section>
     <section class="surface profile" aria-label="Player profile">
       <div class="avatar" aria-hidden="true">
         <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="23" r="12" fill="#c3d0bd"/><path d="M10 60c0-14 9-24 22-24s22 10 22 24" fill="#c3d0bd"/></svg>
@@ -510,6 +526,8 @@
 
     // Enhanced Riftmax UI demo. All values are illustrative until Riot + ranked snapshots are connected.
     const modeMeta = {
+      all: { label:'All game modes', ranked:false, season:[0,0] },
+      other: { label:'Other modes', ranked:false, season:[0,0] },
       solo: { label:'Ranked Solo/Duo', ranked:true, current:'Gold III', lp:82, rankShort:'G III', index:1, tiers:['Gold IV','Gold III','Gold II','Gold I','Platinum IV','Platinum III'], allTimePeak:'Gold I · 74 LP', season:[112,90] },
       flex: { label:'Ranked Flex', ranked:true, current:'Silver I', lp:46, rankShort:'S I', index:1, tiers:['Silver II','Silver I','Gold IV','Gold III','Gold II','Gold I'], allTimePeak:'Gold IV · 58 LP', season:[46,39] },
       draft: { label:'Normal Draft', ranked:false, season:[39,34] },
@@ -518,6 +536,17 @@
     let activeMode = 'solo';
     let activeRange = '24h';
     let liveMode=false;
+    let seasonCursor=0;
+    let seasonComplete=false;
+    let seasonImporting=false;
+    let seasonRunId=0;
+    let seasonAccountKey='';
+    let seasonLabel='';
+    let seasonFirstId='';
+    let seasonGames=new Map();
+    let seasonLastError='';
+    let savedPeaks={};
+    let peakTrackingEnabled=false;
     let lastLiveQuery=null;
     let assetVersion='16.22.1';
     const WORKER_STORAGE='riftmax-worker-url';
@@ -626,7 +655,10 @@
     const modeGames = {
       solo:soloGames,flex:flexSeed.map((r,i)=>buildSeed(r,'flex',i)),
       draft:draftSeed.map((r,i)=>buildSeed(r,'draft',i)),
-      aram:aramSeed.map((r,i)=>buildSeed(r,'aram',i))
+      aram:aramSeed.map((r,i)=>buildSeed(r,'aram',i)),
+      other:[],
+      all:[...soloGames,...flexSeed.map((r,i)=>buildSeed(r,'flex',i)),
+        ...draftSeed.map((r,i)=>buildSeed(r,'draft',i)),...aramSeed.map((r,i)=>buildSeed(r,'aram',i))]
     };
     function playable(mode) { return modeGames[mode].filter(m=>m.result!=='remake'); }
     function getSessions(mode) {
@@ -650,9 +682,15 @@
       const m=modeMeta[activeMode],w=m.season[0],l=m.season[1];
       document.getElementById('rank-mark').textContent=m.ranked?m.rankShort:'—';
       document.getElementById('rank-mark').classList.toggle('is-unranked',!m.ranked);
-      document.getElementById('rank-name').textContent=m.ranked?m.current+' · '+m.lp+' LP':m.label+' · No ranked LP';
-      document.getElementById('peak-rank').hidden=!m.ranked||liveMode;
-      if(m.ranked) document.getElementById('peak-rank').innerHTML='All-time peak: <strong>'+m.allTimePeak+'</strong> <span class="demo-marker">(demo)</span>';
+      document.getElementById('rank-name').textContent=m.ranked?(m.current==='Unranked'?'Unranked':m.current+' · '+m.lp+' LP'):(liveMode?m.label+' · '+modeGames[activeMode].length+' games loaded':m.label+' · No ranked LP');
+      document.getElementById('peak-rank').hidden=!m.ranked;
+      if(m.ranked) {
+        const queue=activeMode==='solo'?'RANKED_SOLO_5x5':'RANKED_FLEX_SR';
+        const peak=savedPeaks[queue];
+        document.getElementById('peak-rank').innerHTML=liveMode
+          ?(peak?'Tracked peak: <strong>'+safeText(peak.tier)+' '+safeText(peak.rank)+' · '+Number(peak.leaguePoints)+' LP</strong> <span class="demo-marker">(since '+safeText(String(peak.trackingSince).slice(0,10))+')</span>':'All-time peak: <strong>Unavailable</strong> · '+(peakTrackingEnabled?'No ranked snapshot yet':'Enable rank history tracking'))
+          :'All-time peak: <strong>'+m.allTimePeak+'</strong> <span class="demo-marker">(demo)</span>';
+      }
       document.querySelector('.record').innerHTML='<span><strong>'+w+'W</strong> / <strong>'+l+'L</strong></span><span>·</span><span>'+(w+l?(w/(w+l)*100).toFixed(1)+'% win rate':'No ranked record')+(liveMode?'':' · demo season')+'</span>';
     }
     function renderPerformance() {
@@ -675,10 +713,10 @@
       v.classList.toggle('negative',!!latest&&meta.ranked&&latest.lpVerified&&latest.lp<0);
       v.classList.toggle('positive',!!latest&&meta.ranked&&latest.lpVerified&&latest.lp>0);
       document.getElementById('last-session-record').textContent=latest?latest.w+'W · '+latest.l+'L · '+minutesText(latest.duration):'No games';
-      document.getElementById('last-session-note').textContent=latest?'Ended '+latest.ago+' · demo':'No recent session';
+      document.getElementById('last-session-note').textContent=latest?'Ended '+latest.ago+(liveMode?'':' · demo'):'No recent session';
       document.getElementById('session-history').innerHTML=sessions.slice(1,6).map((s,i)=>
         '<div class="session-row"><div><span>Session '+(i+2)+' · '+s.ago+'</span><small>'+s.games+' games · '+s.w+'W / '+s.l+'L · '+minutesText(s.duration)+'</small></div><strong class="'+(s.lp<0?'negative':'positive')+'">'+(meta.ranked?(s.lpVerified?signNumber(s.lp)+' LP':'LP unavailable'):s.w+'W / '+s.l+'L')+'</strong></div>'
-      ).join('')||'<div class="form-note">No earlier sessions in this demo.</div>';
+      ).join('')||'<div class="form-note">No earlier recorded sessions.</div>';
     }
     function itemImg(id) { return '<span class="item-icon" title="Item '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/'+assetVersion+'/img/item/'+id+'.png" alt="Item '+id+'" loading="lazy" onerror="this.remove()"></span>'; }
     function spellImg(id) { return '<span class="spell-icon" title="Summoner '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/'+assetVersion+'/img/spell/Summoner'+id+'.png" alt="'+id+'" loading="lazy" onerror="this.remove()"></span>'; }
@@ -701,8 +739,8 @@
           '</span><span class="match-time">· '+m.ago+'</span></div><div class="match-bottom"><span class="champ-name">'+prettyChampion(m.champion)+'</span><span class="kda">'+m.kda+
           '</span></div></div>'+(meta.ranked?'<span class="lp-value">'+(Number.isFinite(m.lpDelta)?m.lp:'LP n/a')+'</span>':'')+
           '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>'+
-          '<div class="match-extra" id="detail-'+m.id+'"><div class="extra-head"><span><strong>'+meta.label+'</strong> · '+m.duration+
-          '</span><span>'+m.ago+' · demo match</span></div><div class="detail-grid">'+stats.map(x=>'<div class="detail-stat"><strong>'+x[1]+'</strong><small>'+x[0]+'</small></div>').join('')+
+          '<div class="match-extra" id="detail-'+m.id+'"><div class="extra-head"><span><strong>'+(liveMode?safeText(m.mode):meta.label)+'</strong> · '+m.duration+
+          '</span><span>'+m.ago+(liveMode?' · Riot match':' · demo match')+'</span></div><div class="detail-grid">'+stats.map(x=>'<div class="detail-stat"><strong>'+x[1]+'</strong><small>'+x[0]+'</small></div>').join('')+
           '</div><div class="build-row"><div class="build-group"><span class="build-label">Build</span>'+m.items.map(itemImg).join('')+'</div><div class="build-group"><span class="build-label">Spells</span>'+m.spells.map(spellImg).join('')+'</div></div>'+
           (m.result==='remake'?'':'<div class="detail-meter"><span>Damage: '+(m.damage/1000).toFixed(1)+'k you</span><div class="detail-meter-track"><div class="detail-meter-fill" style="width:'+damagePct+'%"></div></div><span>'+(m.opponentDamage/1000).toFixed(1)+'k opponent</span></div>')+
           '<div class="scoreboard">'+score(m.ally,'Your team','blue',true)+score(m.enemy,'Enemy team','red',false)+'</div></div></article>';
@@ -711,7 +749,7 @@
       more.hidden=visibleCount>=filtered.length;
       more.textContent='Load more matches ('+Math.max(0,filtered.length-visibleCount)+' remaining)';
       const toolbar=document.querySelector('#matches-view .muted-note');
-      toolbar.textContent=activeChampion?'Showing '+prettyChampion(activeChampion)+' · '+meta.label:'Recent matches · '+meta.label+' · demo';
+      toolbar.textContent=activeChampion?'Showing '+prettyChampion(activeChampion)+' · '+meta.label:(liveMode?seasonLabel+' · '+meta.label+' · '+filtered.length+' loaded games':'Recent matches · '+meta.label+' · demo');
       let clear=document.getElementById('clear-champion-filter');
       if(activeChampion&&!clear) {
         clear=document.createElement('button');clear.type='button';clear.id='clear-champion-filter';clear.className='filter';
@@ -809,7 +847,7 @@
       panel.innerHTML=
         '<div class="champ-expand-top"><div class="champ-expand-icon">'+championIcon(g.name)+'</div>'+
         '<div><div class="champ-expand-name">'+prettyChampion(g.name)+'</div>'+
-        '<div class="champ-expand-meta">'+modeMeta[activeMode].label+' · '+rating.role+' · champion breakdown (demo)</div></div>'+
+        '<div class="champ-expand-meta">'+modeMeta[activeMode].label+' · '+rating.role+(liveMode?' · loaded season games':' · champion breakdown (demo)')+'</div></div>'+
         '<button type="button" class="champ-expand-close" data-close-champion aria-label="Close champion details">×</button></div>'+
         '<div class="champion-scoreline"><div><strong>#'+g.position+' · '+rating.total+'/100</strong>'+
         '<div style="font-size:11px;color:var(--secondary);margin-top:3px">Riftmax Champion Score</div></div>'+
