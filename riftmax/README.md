@@ -1,23 +1,24 @@
-# Riftmax — summoner profile UI mockup
+# Riftmax — Summoner Profile UI Prototype
 
-A standalone, dark-charcoal **visual prototype** based on the original Riftmax layout sketch.
+Standalone dark-charcoal **interactive UI mockup** for Riftmax, based on the original layout sketch.
 
 ## Preview
 
-Open [index.html](./index.html) in a browser. To preview locally, download the HTML file and double-click it. No npm install, framework, or build step required.
+Open [index.html](./index.html) in a browser, or use the [GitHub HTMLPreview](https://htmlpreview.github.io/?https://github.com/dawsonkuy/riftmax/blob/main/riftmax/index.html). The prototype is a single HTML file with inline CSS and JavaScript: no npm install or build step is required.
 
-## What works in the prototype
+## Interactive features
 
-- Centered navigation with Riot ID search styling
-- Player profile card with rank, LP, wins, losses, and win rate
-- Green/red LP graph that switches between 10, 20, and 50 sample games
-- Compact victory/defeat cards that expand into a two-team scoreboard
-- Separate Champions tab
-- Remakes hidden by default, with an option to reveal them
-- Responsive desktop and mobile layout
+- Game mode selector: **Ranked Solo/Duo, Ranked Flex, Normal Draft, and ARAM**. Summary statistics, graph, champion performance and match history change with the selected mode.
+- Ranked profile shows current rank/LP, season peak, and sample season win rate. Unranked modes explicitly show **no ranked LP**.
+- Last-20-games performance: win rate, overall KDA ratio, and current win/loss streak.
+- 10/20/50-game history graph: ranked LP movement or unranked net wins. Focus, tap or hover a match dot to see champion, result, rating and LP change (ranked only). Ranked division promotions and demotions get a highlighted marker where the illustrative sample crosses a division threshold. A selected range can have fewer games when the sample does not contain enough.
+- Sessions automatically group games in the currently selected mode separated by **up to 120 minutes between game end times**. Latest and previous sessions show win/loss record, elapsed duration and ranked LP movement when applicable.
+- Champion cards show per-champion win rate, KDA, CS/min and average damage. Click a champion card or portrait to filter match history.
+- Expand matches to view kills/deaths/assists, CS/min, damage, gold, vision, item builds, summoner spells, damage comparison and both teams' scoreboards.
+- Load more sample matches, toggle remakes, and responsive desktop/mobile styling.
 
-All statistics, match results, and displayed LP changes are **placeholder data**. Search, refreshing, filtering, and loading more matches are intentionally marked as nonfunctional until the API integration.
+## Important data limitations
 
-**Implementation note:** Match-specific LP gains/losses are not available through standard Riot match history endpoints. Production LP history should use tracked ranked snapshots, and only show per-match LP changes when verified.
+**All player statistics, games, rank history, game times, item builds, LP changes, and sessions in this prototype are invented sample data.** There is no live Riot or GRID API connection. Ranked LP deltas are not part of standard Riot match-history responses; production LP tracking and verified peak ranks will require recorded ranked snapshots, queue-specific history, and careful handling of rank promotion/demotion boundaries. Session grouping currently uses demo game times and is scoped to the selected mode; production session detection should be based on chronological game timelines across queues and must handle missing match history. Detailed item builds and summoner spells also require Riot data.
 
-This is deliberately a UI design prototype rather than a finished Riftmax app; it is independent of Earfolio and BestPad.
+The UI is a design prototype, independent of Earfolio and BestPad.
