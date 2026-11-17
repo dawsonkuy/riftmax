@@ -91,13 +91,13 @@
     .peak-content { min-width:0; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:3px 5px; line-height:1.2; }
     .peak-content strong { font-size:11px; font-weight:800; color:#f0f2f5; overflow-wrap:anywhere; }
     .peak-content .peak-date { color:#9aa7b4; font-size:9px; line-height:1.2; }
-    .performance-card { justify-content:flex-start; }
-    .performance-metrics { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); flex:1; align-items:center; }
-    .record, .win-rate { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:9px 3px; min-width:0; margin:0; }
+    .performance-card { justify-content:flex-start; gap:8px; }
+    .performance-card .refresh { position:static; display:flex; align-items:center; justify-content:center; width:100%; min-height:33px; flex-shrink:0; margin:0; padding:6px 10px; font-size:11px; font-weight:750; }
+    .performance-metrics { display:grid; grid-template-columns:minmax(0,1.06fr) minmax(0,1fr); flex:1; align-items:stretch; min-height:0; }
+    .record, .win-rate { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:4px 2px; min-width:0; margin:0; }
     .win-rate { border-left:1px solid #4d5863; }
-    .record .stat-label, .win-rate .stat-label { font-size:9px; color:#a8b5c1; }
-    .record .stat-value { font-size:16px; }
-    .win-rate .stat-value { font-size:21px; }
+    .record .stat-value { font-size:clamp(15px,1.6vw,19px); letter-spacing:-.9px; }
+    .win-rate .stat-value { font-size:clamp(21px,2.2vw,27px); letter-spacing:-.9px; }
     .win-rate .stat-value.positive { color:#67d99a!important; }
     .win-rate .stat-value.negative { color:#fa8188!important; }
     .win-rate .stat-value.neutral { color:#f3c66e!important; }
@@ -403,12 +403,12 @@
       .peak-rank { min-height:27px; padding-top:4px; }
       .peak-label,.peak-content strong { font-size:10px; }
       .peak-content .peak-date { font-size:8px; }
-      .performance-metrics { min-height:60px; }
-      .record,.win-rate { padding:7px 3px; gap:5px; }
-      .record .stat-label,.win-rate .stat-label { font-size:8px; }
-      .record .stat-value { font-size:12px; }
-      .win-rate .stat-value { font-size:17px; }
-      .refresh { top:9px; right:9px; font-size:0; padding:6px; }
+      .performance-card { gap:6px; }
+      .performance-card .refresh { min-height:29px; font-size:10px; padding:5px 8px; }
+      .performance-metrics { min-height:58px; }
+      .record,.win-rate { padding:6px 2px; }
+      .record .stat-value { font-size:clamp(13px,3.5vw,16px); letter-spacing:-.65px; }
+      .win-rate .stat-value { font-size:clamp(19px,5.2vw,23px); letter-spacing:-.65px; }
       .refresh svg { width:14px; height:14px; }
       .lp-panel { padding:17px 15px 14px; }
       .match-button { gap:10px; padding:13px 10px; }
@@ -486,24 +486,21 @@
               <div class="peak-content"><strong>Gold I · 74 LP</strong><span class="peak-date">Demo</span></div>
             </div>
           </div>
-          <div class="stat-card performance-card" id="profile-performance">
-            <span class="stat-label">Season Performance</span>
+          <div class="stat-card performance-card" id="profile-performance" role="group" aria-label="Match record and win rate">
+            <button class="refresh" id="refresh" title="Refresh profile" aria-label="Refresh profile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 4v7h-7"/></svg> Update
+            </button>
             <div class="performance-metrics">
-              <div class="record" id="profile-record">
-                <span class="stat-label">Season Record</span>
+              <div class="record" id="profile-record" role="group" aria-label="Season record: 112 wins, 90 losses">
                 <strong class="stat-value" id="record-value">112W / 90L</strong>
               </div>
-              <div class="win-rate" id="profile-win-rate">
-                <span class="stat-label">Win Rate</span>
+              <div class="win-rate" id="profile-win-rate" role="group" aria-label="Win rate: 55.4%">
                 <strong class="stat-value positive" id="win-rate-value">55.4%</strong>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <button class="refresh" id="refresh" title="Refresh profile" aria-label="Refresh profile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 4v7h-7"/></svg> Update
-      </button>
     </section>
     <section class="surface lp-panel" aria-label="Ranked history and play sessions">
       <div id="ranked-history">
@@ -867,7 +864,7 @@
       const record=liveMode&&m.ranked&&Array.isArray(m.riotRecord)?m.riotRecord:m.season;
       const w=Number(record[0])||0,l=Number(record[1])||0;
       const label=liveMode?(m.ranked&&Array.isArray(m.riotRecord)?'Ranked Record':'Loaded Record'):'Season Record';
-      document.querySelector('#profile-record .stat-label').textContent=label;
+      document.getElementById('profile-record').setAttribute('aria-label',label+': '+w+' wins, '+l+' losses');
       document.getElementById('record-value').textContent=w+'W / '+l+'L';
       const rate=w+l?w/(w+l)*100:null;
       const rateNode=document.getElementById('win-rate-value');
@@ -875,7 +872,7 @@
       rateNode.classList.toggle('positive',rate!==null&&rate>50);
       rateNode.classList.toggle('negative',rate!==null&&rate<50);
       rateNode.classList.toggle('neutral',rate!==null&&rate===50);
-      document.querySelector('#profile-win-rate .stat-label').textContent='Win Rate';
+      document.getElementById('profile-win-rate').setAttribute('aria-label',rate===null?'Win rate unavailable':'Win rate: '+rate.toFixed(1)+'%');
     }
     function renderPerformance() {
       const games=playable(activeMode).slice(0,20),w=games.filter(m=>m.result==='win').length,l=games.length-w;
