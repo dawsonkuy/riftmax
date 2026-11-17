@@ -75,6 +75,66 @@
     .last-session-lp { font-size: 17px; font-weight: 800; color: var(--green); }
     .last-session-lp.negative { color: var(--red); }
     .last-session-record { font-size: 11px; color: var(--secondary); }
+
+    /* Riftmax profile insights */
+    .mode-bar { display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 13px; }
+    .mode-bar label { color:var(--secondary); font-size:12px; font-weight:750; }
+    .mode-bar select { background:var(--card); color:var(--text); border:1px solid var(--line); padding:10px 34px 10px 13px; border-radius:10px; font:600 12px inherit; max-width:75%; cursor:pointer; }
+    .mode-bar select:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+    .peak-rank { color:var(--muted); font-size:11px; margin-top:8px; }
+    .peak-rank strong { color:var(--secondary); }
+    .performance { margin-top:12px; padding:17px 19px 19px; }
+    .performance-head { display:flex; justify-content:space-between; gap:8px; align-items:baseline; margin-bottom:14px; }
+    .performance-subtitle { font-size:11px; color:var(--muted); }
+    .performance-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .performance-stat { padding:13px; border:1px solid var(--subtle-line); background:#202328; border-radius:10px; min-width:0; }
+    .performance-stat small { display:block; font-size:10px; color:var(--muted); margin-bottom:6px; }
+    .performance-stat strong { display:block; font-size:20px; color:var(--text); letter-spacing:-.5px; }
+    .performance-stat span { display:block; font-size:10px; margin-top:5px; color:var(--secondary); }
+    .form-note { font-size:11px; color:var(--muted); margin:4px 0 0; }
+    .chart-wrap { position:relative; }
+    .chart-pip { cursor:pointer; outline:none; }
+    .chart-pip:focus-visible { stroke:#fff; stroke-width:3; }
+    .chart-tooltip { position:absolute; z-index:6; max-width:205px; min-width:145px; background:#121619; border:1px solid #576067; border-radius:9px; padding:10px 12px; color:var(--text); box-shadow:0 12px 30px #0009; pointer-events:none; font-size:11px; line-height:1.6; transform:translateX(-50%); bottom:calc(100% - 7px); left:50%; }
+    .chart-tooltip strong { color:var(--green); }
+    .chart-tooltip .down { color:var(--red); }
+    .chart-tooltip[hidden] { display:none; }
+    .chart-event { font-size:9px; fill:#f1dc9a; pointer-events:none; font-weight:800; }
+    .session-details { border-top:1px solid var(--subtle-line); margin-top:15px; padding-top:12px; }
+    .session-details summary { cursor:pointer; color:var(--secondary); font-size:11px; font-weight:650; }
+    .session-history { display:grid; gap:6px; margin-top:10px; }
+    .session-row { display:flex; justify-content:space-between; gap:10px; padding:9px 10px; background:#202328; border:1px solid var(--subtle-line); border-radius:9px; font-size:11px; }
+    .session-row small { display:block; margin-top:3px; color:var(--muted); }
+    .session-row strong { white-space:nowrap; }
+    .positive { color:var(--green)!important; } .negative { color:var(--red)!important; }
+    .detail-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; margin:12px 0 13px; }
+    .detail-stat { background:#282e34; border:1px solid #353c44; padding:9px 6px; border-radius:8px; text-align:center; min-width:0; }
+    .detail-stat strong { font-size:12px; display:block; color:var(--text); }
+    .detail-stat small { font-size:9px; color:var(--muted); display:block; margin-top:4px; }
+    .build-row { display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:13px; }
+    .build-group { display:flex; align-items:center; flex-wrap:wrap; gap:5px; }
+    .build-group .build-label { font-size:10px; color:var(--muted); margin-right:4px; }
+    .item-icon, .spell-icon { background:#353d42; width:27px; height:27px; display:inline-grid; place-items:center; border-radius:5px; border:1px solid #46515b; overflow:hidden; color:var(--secondary); font-size:9px; }
+    .item-icon img,.spell-icon img { width:100%; height:100%; object-fit:cover; }
+    .detail-meter { margin:7px 0 12px; display:flex; align-items:center; gap:9px; font-size:10px; color:var(--secondary); }
+    .detail-meter-track { flex:1; height:7px; border-radius:99px; overflow:hidden; background:var(--red-bg); display:flex; }
+    .detail-meter-fill { height:100%; border-radius:99px; background:var(--green); }
+    .champion-card { width:100%; color:inherit; text-align:left; cursor:pointer; }
+    .champion-card:hover { border-color:#647c6b; background:#2a3033; }
+    .champion-detail { padding:12px 15px; margin-top:-4px; background:#202328; border:1px solid var(--line); border-radius:10px; font-size:11px; color:var(--secondary); }
+    .champion-detail strong { color:var(--text); }
+    .no-rank-chart { padding:34px 8px 38px; text-align:center; color:var(--secondary); font-size:12px; }
+    .no-rank-chart small { display:block; color:var(--muted); margin-top:6px; font-size:11px; }
+    @media(max-width:490px) {
+      .performance { padding:15px 12px; }
+      .performance-grid { gap:6px; }
+      .performance-stat { padding:11px 7px; }
+      .performance-stat strong { font-size:17px; }
+      .detail-grid { gap:4px; }
+      .detail-stat { padding:8px 3px; }
+      .detail-stat strong { font-size:10px; }
+      .mode-bar select { max-width:74%; }
+    }
     .content-tabs { display: flex; align-items: stretch; gap: 0; border-bottom: 1px solid var(--line); margin: 28px 1px 16px; }
     .tab { flex: 1 1 50%; min-width: 0; text-align: center; background: none; border: none; border-bottom: 2px solid transparent; padding: 0 12px 12px; margin-bottom: -1px; color: #8b949f; font-size: 13px; font-weight: 650; }
     .tab.active { color: var(--text); border-color: var(--green); }
@@ -178,41 +238,55 @@
     </nav>
   </header>
   <main class="page">
-    
+    <div class="mode-bar">
+      <label for="mode-select">Game mode</label>
+      <select id="mode-select" aria-label="Choose game mode">
+        <option value="solo">Ranked Solo/Duo</option>
+        <option value="flex">Ranked Flex</option>
+        <option value="draft">Normal Draft</option>
+        <option value="aram">ARAM</option>
+      </select>
+    </div>
     <section class="surface profile" aria-label="Player profile">
       <div class="avatar" aria-hidden="true">
         <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="23" r="12" fill="#c3d0bd"/><path d="M10 60c0-14 9-24 22-24s22 10 22 24" fill="#c3d0bd"/></svg>
       </div>
       <div class="profile-main">
         <div class="player-name">Summoner <small>#NA1</small></div>
-        <div class="rank-row"><span class="rank-mark">G III</span><span class="rank-name">Gold III · 82 LP</span></div>
+        <div class="rank-row" id="rank-row"><span class="rank-mark" id="rank-mark">G III</span><span class="rank-name" id="rank-name">Gold III · 82 LP</span></div>
+        <div class="peak-rank" id="peak-rank">Season peak: <strong>Gold II · 18 LP</strong></div>
         <div class="record"><span><strong>112W</strong> / <strong>90L</strong></span><span>·</span><span>55.4% win rate</span></div>
       </div>
       <button class="refresh" id="refresh" title="Refresh profile (demo)" aria-label="Refresh profile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 4v7h-7"/></svg> Update
       </button>
     </section>
+    <section class="surface performance" aria-label="Recent performance">
+      <div class="performance-head"><div class="section-title">Recent performance</div><div class="performance-subtitle" id="performance-range">Last 20 games</div></div>
+      <div class="performance-grid" id="performance-grid" aria-live="polite"></div>
+    </section>
     <section class="surface lp-panel" aria-label="LP history graph">
       <div class="panel-top">
-        <div><div class="section-title">LP History</div><div class="lp-change"><strong id="lp-change">+23 LP</strong><span id="lp-subtitle">last 10 games</span></div></div>
+        <div><div class="section-title" id="history-heading">LP History</div><div class="lp-change"><strong id="lp-change">+23 LP</strong><span id="lp-subtitle">last 10 games</span></div></div>
         <div class="ranges" aria-label="LP graph game range"><button class="range selected" data-range="10" aria-pressed="true">10</button><button class="range" data-range="20" aria-pressed="false">20</button><button class="range" data-range="50" aria-pressed="false">50</button></div>
       </div>
-      <div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><g id="chart-points"></g></svg></div>
+      <div class="chart-wrap"><div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><g id="chart-points"></g></svg></div><div class="chart-tooltip" id="chart-tooltip" hidden role="status"></div></div>
       <div class="chart-labels"><span id="chart-start">10 games ago</span><span>Most recent game</span></div>
       <div class="last-session" aria-label="Last play session LP change (illustrative)">
-        <div><div class="last-session-label">Last session</div><div class="last-session-note">Latest play session · demo</div></div>
+        <div><div class="last-session-label">Last session</div><div class="last-session-note" id="last-session-note">Latest play session · demo</div></div>
         <div class="last-session-stats"><strong class="last-session-lp" id="last-session-lp">+44 LP</strong><span class="last-session-record" id="last-session-record">2W · 0L</span></div>
       </div>
+      <details class="session-details"><summary>View previous sessions</summary><div class="session-history" id="session-history"></div></details>
     </section>
     <div class="content-tabs" role="tablist" aria-label="Profile sections"><button role="tab" id="tab-matches" aria-selected="true" class="tab active">Match History</button><button role="tab" id="tab-champions" aria-selected="false" class="tab">Champions</button></div>
     <section id="matches-view" role="tabpanel" aria-labelledby="tab-matches">
-      <div class="toolbar"><span class="muted-note">Recent matches · newest first</span><button class="filter" id="queue-filter">All queues ▾</button></div>
+      <div class="toolbar"><span class="muted-note">Recent matches · newest first · demo data</span><button class="filter" id="queue-filter">Change mode ↑</button></div>
       <div id="match-list"></div>
       <label class="show-remakes"><input type="checkbox" id="remakes" /> Show remake matches</label>
       <button class="load-more" id="load-more">Load more matches</button>
     </section>
-    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Most played champions · ranked solo</span></div><div id="champions-list" class="champions-grid"></div></section>
-    <div class="footnote">Riftmax UI prototype. All players, statistics, LP changes, and games shown here are illustrative.<br />No live Riot or GRID API connection in this mockup.</div>
+    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · selected mode</span></div><div id="champions-list" class="champions-grid"></div></section>
+    <div class="footnote">Riftmax UI prototype. Sessions, player stats, ranks, LP, items and games are illustrative.<br />No live Riot or GRID API connection in this mockup.</div>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>
