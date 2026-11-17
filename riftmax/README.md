@@ -8,10 +8,10 @@ Open [index.html](./index.html) in a browser, or use the [GitHub HTMLPreview](ht
 
 ## Interactive features
 
-- Game mode selector: **Ranked Solo/Duo, Ranked Flex, Normal Draft, and ARAM**. Summary statistics, graph, champion performance and match history change with the selected mode.
+- Horizontal, four-option **game-mode tab selector** across the top: Ranked Solo/Duo, Ranked Flex, Normal Draft, and ARAM. Profile, session, champion performance and match-history data change with the selected mode. Only ranked modes show the LP graph.
 - Ranked profile shows current rank/LP, season peak, and sample season win rate. Unranked modes explicitly show **no ranked LP**.
 - Last-20-games performance: win rate, overall KDA ratio, and current win/loss streak.
-- 10/20/50-game history graph: ranked LP movement or unranked net wins. Focus, tap or hover a match dot to see champion, result, rating and LP change (ranked only). Ranked division promotions and demotions get a highlighted marker where the illustrative sample crosses a division threshold. A selected range can have fewer games when the sample does not contain enough.
+- 10/20/50-game **ranked-only LP graph**: ranked LP movement. Normal Draft and ARAM hide the entire LP graph but still display session statistics. Focus, tap or hover a match dot to see champion, result, rating and LP change (ranked only). Ranked division promotions and demotions get a highlighted marker where the illustrative sample crosses a division threshold. A selected range can have fewer games when the sample does not contain enough.
 - Sessions automatically group games in the currently selected mode separated by **up to 120 minutes between game end times**. Latest and previous sessions show win/loss record, elapsed duration and ranked LP movement when applicable.
 - Champion cards show per-champion win rate, KDA, CS/min and average damage. Click a champion card or portrait to filter match history.
 - Expand matches to view kills/deaths/assists, CS/min, damage, gold, vision, item builds, summoner spells, damage comparison and both teams' scoreboards.
