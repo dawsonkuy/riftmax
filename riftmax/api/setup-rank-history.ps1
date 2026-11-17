@@ -14,19 +14,22 @@ if ($cfg -notmatch '(?m)^\[\[d1_databases\]\]') {
     throw "D1 creation failed. Retry after checking Cloudflare login."
   }
 
-  $foundId = [regex]::Match($created, 'database_id\s*=\s*["'']([0-9a-fA-F-]{36})["'']')
-  if (-not $foundId.Success) {
-    throw "Could not read database_id. Find the generated ID in Cloudflare, then add the [[d1_databases]] binding manually."
-  }
-
-  $id = $foundId.Groups[1].Value
-  Add-Content -Path $cfgPath -Value @"
+  # Wrangler may have offered to write the binding automatically; avoid duplicates.
+  $cfg = Get-Content $cfgPath -Raw
+  if ($cfg -notmatch '(?m)^\[\[d1_databases\]\]') {
+    $foundId = [regex]::Match($created, 'database_id\s*=\s*["'']([0-9a-fA-F-]{36})["'']')
+    if (-not $foundId.Success) {
+      throw "Could not read database_id. Find the generated ID in Cloudflare, then add the [[d1_databases]] binding manually."
+    }
+    $id = $foundId.Groups[1].Value
+    Add-Content -Path $cfgPath -Value @"
 
 [[d1_databases]]
 binding = "RANK_DB"
 database_name = "riftmax-rank-history"
 database_id = "$id"
 "@
+  }
 }
 
 Write-Host "Applying rank history schema..."
