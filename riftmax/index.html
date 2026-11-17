@@ -129,6 +129,7 @@
     .last-session-lp { font-size: 17px; font-weight: 800; color: var(--green); }
     .last-session-lp.negative { color: var(--red); }
     .last-session-record { font-size: 11px; color: var(--secondary); }
+    .last-session-record.neutral, .session-row strong.neutral { color:#f3c66e; }
 
     /* Riftmax profile insights */
     .mode-selector { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; padding:5px; background:#22262b; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
@@ -188,7 +189,6 @@
     .detail-meter { margin:7px 0 12px; display:flex; align-items:center; gap:9px; font-size:10px; color:var(--secondary); }
     .detail-meter-track { flex:1; height:7px; border-radius:99px; overflow:hidden; background:var(--red-bg); display:flex; }
     .detail-meter-fill { height:100%; border-radius:99px; background:var(--green); }
-    .demo-marker { font-size:10px; color:var(--muted); }
     .champions-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px 8px; align-items:start; }
     .champion-tile { width:100%; min-width:0; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 5px 12px; text-align:center; color:var(--text); background:transparent; border:1px solid transparent; border-radius:15px; cursor:pointer; transition:transform .16s,background .16s,border-color .16s; }
     .champion-tile:hover { background:#292f32; transform:translateY(-2px); }
@@ -446,7 +446,7 @@
   </header>
   <main class="page">
     <div class="api-connect">
-      <div class="api-connect-main"><span id="api-state" role="status">Demo mode · no Riot backend connected</span><button id="show-api-settings" type="button" class="api-settings-button" aria-expanded="false" aria-controls="api-settings">Connect Riot backend</button></div>
+      <div class="api-connect-main"><span id="api-state" role="status">Preview profile · search a Riot ID for live stats</span><button id="show-api-settings" type="button" class="api-settings-button" aria-expanded="false" aria-controls="api-settings">Connect Riot backend</button></div>
       <div id="api-settings" hidden>
         <label for="worker-url">Cloudflare Worker URL (public endpoint, not your Riot key)</label>
         <div class="api-config-row"><input id="worker-url" type="url" placeholder="https://riftmax-riot.your-subdomain.workers.dev" autocomplete="url" aria-label="Worker base URL"><button id="save-api-url" type="button">Save URL</button></div>
@@ -488,7 +488,7 @@
             </div>
             <div class="peak-rank" id="peak-rank" aria-label="Peak rank">
               <span class="peak-label">Peak</span>
-              <div class="peak-content"><strong>Gold I · 74 LP</strong><span class="peak-date">Demo</span></div>
+              <div class="peak-content"><strong>Gold I · 74 LP</strong></div>
             </div>
           </div>
           <div class="stat-card performance-card" id="profile-performance" role="group" aria-label="Match record and win rate">
@@ -514,13 +514,13 @@
         <div class="ranges" aria-label="LP graph time range"><button class="range selected" data-range="24h" aria-pressed="true">24h</button><button class="range" data-range="7d" aria-pressed="false">Week</button><button class="range" data-range="month" aria-pressed="false">Month</button><button class="range" data-range="season" aria-pressed="false">Season</button></div>
       </div>
       <div class="chart-wrap"><div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" hidden/><g id="chart-segments" aria-hidden="true"></g><g id="chart-points"></g></svg></div><div class="chart-tooltip" id="chart-tooltip" hidden role="status"></div></div>
-      <div class="chart-labels"><span id="chart-start">24 hours ago</span><span>Now</span></div><div id="chart-coverage" class="chart-coverage">Demo LP history · available matches only, not complete ranked history</div>
+      <div class="chart-labels"><span id="chart-start">24 hours ago</span><span>Now</span></div><div id="chart-coverage" class="chart-coverage">Example LP history · illustrative data only</div>
       </div>
       <div id="live-lp-note" class="api-helper" hidden>LP history needs recorded ranked snapshots. Riot's match history does not include verified LP changes per match.</div>
       <div class="section-title sessions-title" id="sessions-title" hidden>Play sessions</div>
       <div class="last-session" aria-label="Last play session LP change (illustrative)">
-        <div><div class="last-session-label">Last session</div><div class="last-session-note" id="last-session-note">Latest play session · demo</div></div>
-        <div class="last-session-stats"><strong class="last-session-lp" id="last-session-lp">+44 LP</strong><span class="last-session-record" id="last-session-record">2W · 0L</span></div>
+        <div><div class="last-session-label">Last session</div><div class="last-session-note" id="last-session-note">Latest play session</div></div>
+        <div class="last-session-stats"><strong class="last-session-lp" id="last-session-lp">+44 LP</strong><span class="last-session-record" id="last-session-record">100.0% WR</span></div>
       </div>
       <details class="session-details"><summary>View previous sessions</summary><div class="session-history" id="session-history"></div></details>
     </section>
@@ -530,12 +530,12 @@
     </section>
     <div class="content-tabs" role="tablist" aria-label="Profile sections"><button role="tab" id="tab-matches" aria-selected="true" class="tab active">Match History</button><button role="tab" id="tab-champions" aria-selected="false" class="tab">Champions</button></div>
     <section id="matches-view" role="tabpanel" aria-labelledby="tab-matches">
-      <div class="toolbar"><span class="muted-note">Recent matches · newest first · demo data</span></div>
+      <div class="toolbar"><span class="muted-note">Recent matches · newest first</span></div>
       <div id="match-list"></div>
       <label class="show-remakes"><input type="checkbox" id="remakes" /> Show remake matches</label>
       <button class="load-more" id="load-more">Load more matches</button>
     </section>
-    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · ranked by Riftmax Score</span></div><div class="champion-ranking-note">Scores reward proven wins, games played and role-adjusted performance. Tap any champion for details. <span class="demo-marker">Demo data</span></div><div id="champions-list" class="champions-grid"></div></section>
+    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · ranked by Riftmax Score</span></div><div class="champion-ranking-note">Scores reward proven wins, games played and role-adjusted performance. Tap any champion for details.</div><div id="champions-list" class="champions-grid"></div></section>
     <div id="champion-modal" class="champion-modal" hidden>
       <section id="champion-details" class="surface champ-expand" role="dialog" aria-modal="true" aria-labelledby="champion-modal-title" tabindex="-1" hidden></section>
     </div>
@@ -664,7 +664,7 @@
     document.getElementById('tab-matches').addEventListener('click',() => switchTab('matches'));
     document.getElementById('tab-champions').addEventListener('click',() => switchTab('champions'));
 
-    // Enhanced Riftmax UI demo. All values are illustrative until Riot + ranked snapshots are connected.
+    // Riftmax starts with illustrative preview values until Riot + ranked snapshots are connected.
     const modeMeta = {
       all: { label:'All game modes', ranked:false, season:[0,0] },
       other: { label:'Other modes', ranked:false, season:[0,0] },
@@ -755,7 +755,7 @@
       ['LeeSin','loss',4,8,7,-22,7440],['Ahri','win',8,4,10,23,8800],
       ['Orianna','loss',4,6,8,-22,8900],['Jinx','win',11,4,6,22,9020],
       ['Yasuo','win',7,5,9,20,10080],
-      // Older demo history for Month and Season selectors (not real user data).
+      // Older illustrative history for Month and Season selectors (not real user data).
       ['Ahri','loss',4,7,11,-21,16900],['Jinx','win',10,4,9,24,21600],
       ['LeeSin','win',8,4,12,22,28100],['Orianna','loss',3,8,7,-23,36200],
       ['Yasuo','win',12,6,6,24,59500],['Ahri','win',8,3,12,21,89000],
@@ -863,7 +863,7 @@
             :'<strong>Unavailable</strong><span class="peak-date">'+
               (peakTrackingEnabled?'No rank snapshot yet':'Tracking not enabled')+'</span>')
           :rankEmblem(m.allTimePeak,true)+'<strong>'+safeText(m.allTimePeak)+'</strong>'+
-            '<span class="peak-date">Demo</span>';
+            '';
         peakNode.innerHTML='<span class="peak-label">Peak</span><div class="peak-content">'+peakDetails+'</div>';
       }
 
@@ -895,17 +895,34 @@
       ];
       document.getElementById('performance-grid').innerHTML=stats.map(x=>'<div class="performance-stat"><small>'+x[0]+'</small><strong>'+x[1]+'</strong><span>'+x[2]+'</span></div>').join('');
     }
+    function sessionWinRate(session) {
+      const finished=session.w+session.l;
+      return finished?(session.w/finished*100).toFixed(1)+'% WR':'—';
+    }
+    function sessionWinRateClass(session) {
+      const finished=session.w+session.l;
+      if(!finished)return '';
+      return session.w>session.l?'positive':session.w<session.l?'negative':'neutral';
+    }
     function renderSessions() {
       const meta=modeMeta[activeMode],sessions=getSessions(activeMode),latest=sessions[0];
       const v=document.getElementById('last-session-lp');
       v.textContent=latest?(meta.ranked?(latest.lpVerified?signNumber(latest.lp)+' LP':'LP unavailable'):latest.games+' games'):'—';
       v.classList.toggle('negative',!!latest&&meta.ranked&&latest.lpVerified&&latest.lp<0);
       v.classList.toggle('positive',!!latest&&meta.ranked&&latest.lpVerified&&latest.lp>0);
-      document.getElementById('last-session-record').textContent=latest?latest.w+'W · '+latest.l+'L · '+minutesText(latest.duration):'No games';
-      document.getElementById('last-session-note').textContent=latest?'Ended '+latest.ago+(liveMode?'':' · demo'):'No recent session';
-      document.getElementById('session-history').innerHTML=sessions.slice(1,6).map((s,i)=>
-        '<div class="session-row"><div><span>Session '+(i+2)+' · '+s.ago+'</span><small>'+s.games+' games · '+s.w+'W / '+s.l+'L · '+minutesText(s.duration)+'</small></div><strong class="'+(s.lp<0?'negative':'positive')+'">'+(meta.ranked?(s.lpVerified?signNumber(s.lp)+' LP':'LP unavailable'):s.w+'W / '+s.l+'L')+'</strong></div>'
-      ).join('')||'<div class="form-note">No earlier recorded sessions.</div>';
+      const rateNode=document.getElementById('last-session-record');
+      rateNode.textContent=latest?sessionWinRate(latest):'No games';
+      rateNode.classList.toggle('positive',!!latest&&sessionWinRateClass(latest)==='positive');
+      rateNode.classList.toggle('negative',!!latest&&sessionWinRateClass(latest)==='negative');
+      rateNode.classList.toggle('neutral',!!latest&&sessionWinRateClass(latest)==='neutral');
+      rateNode.title=latest?'Session win rate · '+minutesText(latest.duration):'';
+      document.getElementById('last-session-note').textContent=latest?'Ended '+latest.ago:'No recent session';
+      document.getElementById('session-history').innerHTML=sessions.slice(1,6).map((s,i)=>{
+        const rate=sessionWinRate(s),detail=s.games+' games · '+(meta.ranked?rate+' · ':'')+minutesText(s.duration);
+        const value=meta.ranked?(s.lpVerified?signNumber(s.lp)+' LP':'LP unavailable'):rate;
+        const cls=meta.ranked?(s.lpVerified?(s.lp>0?'positive':s.lp<0?'negative':'neutral'):''):sessionWinRateClass(s);
+        return '<div class="session-row"><div><span>Session '+(i+2)+' · '+s.ago+'</span><small>'+detail+'</small></div><strong class="'+cls+'">'+value+'</strong></div>';
+      }).join('')||'<div class="form-note">No earlier recorded sessions.</div>';
     }
     function itemImg(id) { return '<span class="item-icon" title="Item '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/'+assetVersion+'/img/item/'+id+'.png" alt="Item '+id+'" loading="lazy" onerror="this.remove()"></span>'; }
     function spellImg(id) { return '<span class="spell-icon" title="Summoner '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/'+assetVersion+'/img/spell/Summoner'+id+'.png" alt="'+id+'" loading="lazy" onerror="this.remove()"></span>'; }
@@ -934,7 +951,7 @@
               '<span>Gold <b>'+((Number(p.gold)||0)/1000).toFixed(1)+'k</b></span>'+
               '<span>Vision <b>'+Math.round(Number(p.vision)||0)+'</b></span>'+
               '<span>Lvl <b>'+Math.round(Number(p.level)||0)+'</b></span></div>':
-              '<div class="team-legacy">Detailed player stats unavailable for this cached/demo match.</div>';
+              '<div class="team-legacy">Detailed player stats unavailable for this cached match.</div>';
             const items=hasDetails?'<div class="team-items" aria-label="Item build">'+
               p.items.slice(0,7).map(id=>Number(id)>0?itemImg(Number(id)):'<span class="item-empty" title="Empty item slot"></span>').join('')+
               '</div>':'';
@@ -951,7 +968,7 @@
           '</span></div></div>'+(meta.ranked?'<span class="lp-value">'+(Number.isFinite(m.lpDelta)?m.lp:'LP n/a')+'</span>':'')+
           '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>'+
           '<div class="match-extra" id="detail-'+m.id+'"><div class="extra-head"><span><strong>'+(liveMode?safeText(m.mode):meta.label)+'</strong> · '+m.duration+
-          '</span><span>'+m.ago+(liveMode?' · Riot match':' · demo match')+'</span></div><div class="detail-grid">'+stats.map(x=>'<div class="detail-stat"><strong>'+x[1]+'</strong><small>'+x[0]+'</small></div>').join('')+
+          '</span><span>'+m.ago+(liveMode?' · Riot match':'')+'</span></div><div class="detail-grid">'+stats.map(x=>'<div class="detail-stat"><strong>'+x[1]+'</strong><small>'+x[0]+'</small></div>').join('')+
           '</div><div class="build-row"><div class="build-group"><span class="build-label">Build</span>'+m.items.map(itemImg).join('')+'</div><div class="build-group"><span class="build-label">Spells</span>'+m.spells.map(spellImg).join('')+'</div></div>'+
           (m.result==='remake'?'':'<div class="detail-meter"><span>Damage: '+(m.damage/1000).toFixed(1)+'k you</span><div class="detail-meter-track"><div class="detail-meter-fill" style="width:'+damagePct+'%"></div></div><span>'+(m.opponentDamage/1000).toFixed(1)+'k opponent</span></div>')+
           '<div class="scoreboard">'+score(m.ally,'Your team','blue',true)+score(m.enemy,'Enemy team','red',false)+'</div></div></article>';
@@ -960,7 +977,7 @@
       more.hidden=visibleCount>=filtered.length;
       more.textContent='Load more matches ('+Math.max(0,filtered.length-visibleCount)+' remaining)';
       const toolbar=document.querySelector('#matches-view .muted-note');
-      toolbar.textContent=activeChampion?'Showing '+prettyChampion(activeChampion)+' · '+meta.label:(liveMode?seasonLabel+' · '+meta.label+' · '+filtered.length+' loaded games':'Recent matches · '+meta.label+' · demo');
+      toolbar.textContent=activeChampion?'Showing '+prettyChampion(activeChampion)+' · '+meta.label:(liveMode?seasonLabel+' · '+meta.label+' · '+filtered.length+' loaded games':'Recent matches · '+meta.label);
       let clear=document.getElementById('clear-champion-filter');
       if(activeChampion&&!clear) {
         clear=document.createElement('button');clear.type='button';clear.id='clear-champion-filter';clear.className='filter';
@@ -1085,7 +1102,7 @@
         '<div class="champ-expand-top"><div class="champ-expand-icon">'+championIcon(g.name)+'</div>'+
         '<div><h2 class="champ-expand-name" id="champion-modal-title">'+safeText(prettyChampion(g.name))+'</h2>'+
         '<div class="champ-expand-meta">'+safeText(modeMeta[activeMode].label)+' performance · '+
-          safeText(rating.role)+(liveMode?' · Riot matches loaded':' · demo data')+'</div></div>'+
+          safeText(rating.role)+(liveMode?' · Riot matches loaded':' · preview matches')+'</div></div>'+
         '<button type="button" class="champ-expand-close" data-close-champion aria-label="Close champion popup">×</button></div>'+
         '<div class="champion-scoreline"><div><strong>#'+g.position+' · '+rating.total+'/100</strong>'+
         '<div style="font-size:11px;color:var(--secondary);margin-top:3px">Riftmax Champion Score</div></div>'+
@@ -1104,7 +1121,7 @@
           '<div class="champion-games-note">'+
             (partial?'Season import in progress. More games will appear as Riot history loads.':
             liveMode?'All available imported games this season, across game modes.':
-            'Demo games across all modes; connect Riot to see real match history.')+
+            'Example games across modes; load a Riot ID to view real match history.')+
           '</div><div class="champion-game-list">'+(matchList||'<div class="form-note">No games available yet.</div>')+
           '</div></section>';
       panel.hidden=false;
@@ -1139,7 +1156,7 @@
       const lp=Math.max(0,Math.round(rating-ix*100));
       return meta.tiers[ix]+' · '+lp+' LP';
     }
-    // Queue-specific cumulative LP history using available demo match timestamps.
+    // Queue-specific cumulative illustrative LP history using preview match timestamps.
     // Season means the loaded tracked portion of the season, not a guarantee of complete historical data.
     function renderChart(range) {
       const ranges={ '24h':{minutes:1440,label:'24 hours ago',caption:'last 24 hours'},
@@ -1176,7 +1193,7 @@
       document.getElementById('history-heading').textContent='LP History';
       document.getElementById('chart-start').textContent=setting.label;
       document.getElementById('chart-coverage').textContent=
-        (range==='season'?'Season: ':'')+'Showing '+total+' tracked demo '+(total===1?'game':'games')+
+        (range==='season'?'Season: ':'')+'Showing '+total+' example '+(total===1?'game':'games')+
         '. Only available mock history is shown; actual Riot LP snapshots are not connected.';
       document.querySelectorAll('.range').forEach(b=>{
         const active=b.dataset.range===range;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active));
