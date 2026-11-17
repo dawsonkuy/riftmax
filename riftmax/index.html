@@ -98,6 +98,8 @@
     .season-import-top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
     .season-import-top strong { font-size:12px; }
     #season-import-status { margin-top:5px; color:var(--secondary); font-size:11px; }
+    #season-progress-fill.loading { animation: season-import-loading 2s ease-in-out infinite alternate; }
+    @keyframes season-import-loading { from {transform:translateX(0)} to {transform:translateX(280%)} }
     .season-progress-track { height:5px; border-radius:8px; overflow:hidden; margin:12px 0 8px; background:var(--line); }
     #season-progress-fill { width:0%; height:100%; background:var(--green); transition:width .3s ease; }
     @media (max-width:560px) { .mode-selector { display:flex; overflow-x:auto; } .mode-tab { min-width:84px !important; } .season-import-top { align-items:flex-start; } }
@@ -547,6 +549,8 @@
     let seasonLastError='';
     let savedPeaks={};
     let peakTrackingEnabled=false;
+    let seasonStartIso='';
+    let seasonPlayerPuuid='';
     let lastLiveQuery=null;
     let assetVersion='16.22.1';
     const WORKER_STORAGE='riftmax-worker-url';
@@ -1007,6 +1011,133 @@
       node.textContent=message;
       node.style.color=isError?'#fa8188':'#a9ccaf';
     }
+    function seasonCacheKey(platform,puuid,seasonStart) {
+      return 'riftmax-season-v2:'+platform+':'+puuid+':'+seasonStart;
+    }
+    function cacheSeason() {
+      if(!seasonAccountKey||!liveMode)return;
+      try {
+        localStorage.setItem(seasonAccountKey,JSON.stringify({
+          firstId:seasonFirstId,cursor:seasonCursor,complete:seasonComplete,
+          matches:[...seasonGames.values()]
+        }));
+      }catch (_) {
+        // Very large season histories can exceed browser storage quotas.
+        // The loaded matches remain available in this tab.
+      }
+    }
+    function refreshSeasonGames() {
+      const all=[...seasonGames.values()].sort((a,b)=>(b.gameEndTimestamp||0)-(a.gameEndTimestamp||0));
+      modeGames.all=all;
+      for(const key of ['solo','flex','draft','aram','other'])modeGames[key]=all.filter(m=>m.modeKey===key);
+      for(const key of ['all','solo','flex','draft','aram','other']) {
+        const played=playable(key);
+        modeMeta[key].season=[
+          played.filter(m=>m.result==='win').length,
+          played.filter(m=>m.result==='loss').length
+        ];
+      }
+    }
+    function renderSeasonImportStatus() {
+      const panel=document.getElementById('season-import');
+      panel.hidden=!liveMode;
+      if(!liveMode)return;
+      document.getElementById('season-import-label').textContent=seasonLabel+' · season match history';
+      const count=seasonGames.size;
+      const state=seasonComplete?'Complete · all available season match IDs checked':
+        seasonImporting?'Importing season matches…':
+        seasonLastError?'Paused: '+seasonLastError:'Paused · import can resume';
+      document.getElementById('season-import-status').textContent=
+        count+' games loaded · '+seasonCursor+' IDs checked · '+state;
+      const btn=document.getElementById('season-import-action');
+      btn.textContent=seasonImporting?'Pause import':seasonComplete?'Check for new games':'Resume import';
+      const fill=document.getElementById('season-progress-fill');
+      fill.style.width=seasonComplete?'100%':seasonImporting?'28%':'0%';
+      fill.classList.toggle('loading',seasonImporting);
+    }
+    async function requestSeasonPage(query,platform,offset) {
+      const separator=query.lastIndexOf('#');
+      const gameName=query.slice(0,separator).trim(),tagLine=query.slice(separator+1).trim();
+      const url=new URL(workerBase+'/api/profile');
+      url.searchParams.set('gameName',gameName);
+      url.searchParams.set('tagLine',tagLine);
+      url.searchParams.set('platform',platform);
+      url.searchParams.set('start',String(offset));
+      let response;
+      try {
+        response=await fetch(url.toString(),{method:'GET',mode:'cors',headers:{Accept:'application/json'}});
+      } catch(e) {
+        throw Error('Cannot reach Riftmax Worker. Check the Worker URL and browser connection.');
+      }
+      let body;
+      try{body=await response.json();}catch{throw Error('Worker returned invalid JSON (HTTP '+response.status+').');}
+      if(!response.ok){
+        const step=typeof body.stage==='string'?' ['+body.stage+']':'';
+        const status=Number.isInteger(body.riotStatus)?' (Riot HTTP '+body.riotStatus+')':'';
+        const error=new Error((body.error||('Worker HTTP '+response.status))+step+status);
+        error.status=response.status;
+        error.retryAfter=Math.max(0,Number(body.retryAfter)||0);
+        throw error;
+      }
+      if(body.source!=='riot-api'||!Array.isArray(body.matches)||!Array.isArray(body.ranks)||
+        !body.account||!body.season||!body.pagination||
+        !Number.isSafeInteger(body.pagination.nextStart))throw Error('Worker response is missing season pagination data. Deploy the latest Worker.');
+      return body;
+    }
+    function mergeSeasonPage(body) {
+      for(const m of body.matches) {
+        if(m&&typeof m.id==='string'&&Number.isFinite(Number(m.gameEndTimestamp)))seasonGames.set(m.id,m);
+      }
+      seasonCursor=body.pagination.nextStart;
+      seasonComplete=!body.pagination.hasMore;
+      refreshSeasonGames();
+      cacheSeason();
+      renderEverything();
+    }
+    async function importEntireSeason(runId) {
+      if(seasonImporting||seasonComplete||!lastLiveQuery)return;
+      seasonImporting=true;
+      seasonLastError='';
+      renderSeasonImportStatus();
+      const query=lastLiveQuery;
+      const platform=document.getElementById('platform-select').value;
+      let consecutiveRateLimits=0;
+      while(seasonImporting&&runId===seasonRunId&&!seasonComplete) {
+        // A development Riot key has conservative quotas. Do not hammer it.
+        await new Promise(resolve=>setTimeout(resolve,1600));
+        if(!seasonImporting||runId!==seasonRunId)break;
+        try {
+          const previous=seasonCursor;
+          const page=await requestSeasonPage(query,platform,seasonCursor);
+          if(!seasonImporting||runId!==seasonRunId)break;
+          if(page.season.startsAt!==seasonStartIso || page.account.puuid!==seasonPlayerPuuid)
+            throw Error('Season or Riot account changed during import.');
+          if(page.pagination.nextStart<=previous)throw Error('Riot returned a non-advancing pagination cursor.');
+          consecutiveRateLimits=0;
+          mergeSeasonPage(page);
+          setApiStatus(seasonGames.size+' season games loaded · '+(seasonComplete?'import complete':'importing'));
+        }catch(error){
+          if(!seasonImporting||runId!==seasonRunId)break;
+          if(error.status===429&&error.retryAfter>0&&consecutiveRateLimits<3) {
+            consecutiveRateLimits++;
+            seasonLastError='Riot rate limit · cooling down '+error.retryAfter+'s';
+            renderSeasonImportStatus();
+            await new Promise(resolve=>setTimeout(resolve,Math.min(180000,error.retryAfter*1000+1500)));
+            if(runId===seasonRunId)seasonLastError='';
+            continue;
+          }
+          seasonLastError=String(error.message||error);
+          setApiStatus('Season import stopped: '+seasonLastError,true);
+          break;
+        }
+      }
+      if(runId===seasonRunId) {
+        seasonImporting=false;
+        cacheSeason();
+        renderSeasonImportStatus();
+        if(seasonComplete)setApiStatus(seasonLabel+' · complete · '+seasonGames.size+' Riot matches');
+      }
+    }
     async function loadRiotProfile(query) {
       if(!workerBase) {
         setApiSettingsVisible(true);
@@ -1015,70 +1146,95 @@
       }
       const separator=query.lastIndexOf('#');
       if(separator<=0||separator===query.length-1){toast('Use Name#TAG for a Riot ID.');return;}
-      const gameName=query.slice(0,separator).trim();
-      const tagLine=query.slice(separator+1).trim();
+      seasonRunId++;
+      seasonImporting=false;
+      const runId=seasonRunId;
       const platform=document.getElementById('platform-select').value;
-      const url=new URL(workerBase+'/api/profile');
-      url.searchParams.set('gameName',gameName);
-      url.searchParams.set('tagLine',tagLine);
-      url.searchParams.set('platform',platform);
-      setApiStatus('Loading Riot account and recent games...');
+      setApiStatus('Loading Riot account and current season…');
       const formInput=document.getElementById('search');
       const refresh=document.getElementById('refresh');
       refresh.disabled=true;formInput.disabled=true;
-      try {
-        const response=await fetch(url.toString(),{method:'GET',mode:'cors',headers:{Accept:'application/json'}});
-        const body=await response.json();
-        if(!response.ok) {
-          const step=typeof body.stage==='string'?' ['+body.stage+']':'';
-          const status=Number.isInteger(body.riotStatus)?' (Riot HTTP '+body.riotStatus+')':'';
-          throw Error((body.error||('Riot backend returned HTTP '+response.status))+step+status);
-        }
-        if(body.source!=='riot-api'||!Array.isArray(body.matches)||!Array.isArray(body.ranks)||!body.account)
-          throw Error('Riot Worker returned an incomplete response.');
-        // Only switch away from demo mode after all necessary data has been verified.
+      try{
+        const body=await requestSeasonPage(query,platform,0);
+        if(runId!==seasonRunId)return;
         const byQueue={solo:'RANKED_SOLO_5x5',flex:'RANKED_FLEX_SR'};
-        const nextMeta={};
-        for(const key of ['solo','flex','draft','aram']) {
-          const entry=key==='solo'||key==='flex'?body.ranks.find(x=>x.queueType===byQueue[key]):null;
-          const current=modeMeta[key];
-          nextMeta[key]={
-            ...current,
-            ...(entry?{current:String(entry.tier)+' '+String(entry.rank),rankShort:String(entry.tier).slice(0,1)+' '+String(entry.rank),
-                lp:Number(entry.leaguePoints)||0,season:[Number(entry.wins)||0,Number(entry.losses)||0]}
-              :{current:'Unranked',rankShort:'—',lp:0,season:[0,0]}),
-            allTimePeak:null
-          };
+        for(const key of ['solo','flex']) {
+          const entry=body.ranks.find(x=>x.queueType===byQueue[key]);
+          const m=modeMeta[key];
+          if(entry){
+            m.current=String(entry.tier)+' '+String(entry.rank);
+            m.rankShort=String(entry.tier).slice(0,1)+' '+String(entry.rank);
+            m.lp=Number(entry.leaguePoints)||0;
+            m.riotRecord=[Number(entry.wins)||0,Number(entry.losses)||0];
+          }else {
+            m.current='Unranked';m.rankShort='—';m.lp=0;m.riotRecord=[0,0];
+          }
         }
-        const nextGames={solo:[],flex:[],draft:[],aram:[]};
-        for(const game of body.matches) {
-          if(game&&Object.hasOwn(nextGames,game.modeKey))nextGames[game.modeKey].push(game);
+        savedPeaks=body.rankHistory&&body.rankHistory.peaks||{};
+        peakTrackingEnabled=!!(body.rankHistory&&body.rankHistory.enabled);
+        const newKey=seasonCacheKey(platform,body.account.puuid,body.season.startsAt);
+        seasonAccountKey=newKey;
+        seasonPlayerPuuid=body.account.puuid;
+        seasonStartIso=body.season.startsAt;
+        seasonLabel=body.season.label;
+        seasonFirstId=body.matches[0]?.id||'';
+        seasonCursor=0;seasonComplete=false;
+        seasonLastError='';
+        seasonGames=new Map();
+        const firstPageEnd=body.pagination.nextStart;
+        let cached=null;
+        try{cached=JSON.parse(localStorage.getItem(newKey)||'null');}catch{}
+        // Reuse completed histories only if the latest Riot match is unchanged.
+        if(cached&&cached.firstId===seasonFirstId&&Number.isSafeInteger(cached.cursor)&&
+          cached.cursor>=firstPageEnd&&Array.isArray(cached.matches)){
+          for(const m of cached.matches){
+            if(m&&typeof m.id==='string'&&Number.isFinite(Number(m.gameEndTimestamp)))
+              seasonGames.set(m.id,m);
+          }
+          seasonCursor=cached.cursor;
+          seasonComplete=cached.complete===true;
         }
-        for(const key of Object.keys(nextGames)) {
-          nextGames[key].sort((a,b)=>a.minutesAgo-b.minutesAgo);
-          modeGames[key]=nextGames[key];
-          Object.assign(modeMeta[key],nextMeta[key]);
+        if(!seasonCursor)seasonCursor=firstPageEnd;
+        if(!cached||cached.firstId!==seasonFirstId)seasonComplete=!body.pagination.hasMore;
+        for(const m of body.matches){
+          if(m&&typeof m.id==='string')seasonGames.set(m.id,m);
         }
+        refreshSeasonGames();
         liveMode=true;
         lastLiveQuery=query;
+        activeMode='all';
         activeChampion=null;selectedChampion=null;visibleCount=8;
         document.getElementById('player-name').innerHTML=safeText(body.account.gameName)+' <small>#'+safeText(body.account.tagLine)+'</small>';
         const iconId=Number(body.account.profileIconId);
-        if(Number.isInteger(iconId)&&iconId>=0) {
+        if(Number.isInteger(iconId)&&iconId>=0)
           document.querySelector('.avatar').innerHTML='<img alt="" src="https://ddragon.leagueoflegends.com/cdn/'+assetVersion+'/img/profileicon/'+iconId+'.png" onerror="this.remove()">';
-        }
-        document.getElementById('data-footnote').textContent='Live match and rank data from Riot Games API · most recent '+body.matches.length+' retrieved games. LP changes and all-time peak are unavailable until tracked in a separate database. Riftmax is not endorsed by Riot Games.';
-        const note=body.matches.length?'Live Riot data · '+body.matches.length+' recent games':'Live Riot account · no supported recent matches';
-        setApiStatus(note+' · '+body.account.gameName+'#'+body.account.tagLine);
+        document.getElementById('data-footnote').textContent='Riot Games API · '+seasonLabel+' since '+seasonStartIso.slice(0,10)+'. All-game statistics are based on imported matches; complete only after season import finishes. All-time historical peak LP cannot be recovered from Riot match data. Tracked peak starts with the first verified snapshot. Riftmax is not endorsed by Riot Games.';
         setApiSettingsVisible(false);
+        cacheSeason();
         renderEverything();
+        if(!seasonComplete)void importEntireSeason(runId);
+        else setApiStatus(seasonLabel+' · '+seasonGames.size+' cached games · complete');
       }catch(err) {
         setApiStatus('API error: '+String(err.message||err),true);
         toast('Riot API connection failed; existing data was kept.');
-      }finally {
+      }finally{
         refresh.disabled=false;formInput.disabled=false;
       }
     }
+    document.getElementById('season-import-action').addEventListener('click',()=>{
+      if(!liveMode)return;
+      if(seasonImporting) {
+        seasonRunId++;
+        seasonImporting=false;
+        seasonLastError='';
+        renderSeasonImportStatus();
+      }else if(seasonComplete){
+        if(lastLiveQuery)void loadRiotProfile(lastLiveQuery);
+      }else{
+        seasonRunId++;
+        void importEntireSeason(seasonRunId);
+      }
+    });
     document.getElementById('show-api-settings').addEventListener('click',()=>{
       const now=document.getElementById('api-settings').hidden;
       setApiSettingsVisible(now);
@@ -1114,6 +1270,7 @@
       document.getElementById('live-lp-note').hidden=!ranked||!liveMode;
       document.getElementById('sessions-title').hidden=ranked&&!liveMode;
       renderProfile();renderPerformance();renderSessions();renderMatches();renderChampions();
+      renderSeasonImportStatus();
       if(ranked&&!liveMode)renderChart(activeRange);
       else document.getElementById('chart-tooltip').hidden=true;
     }
