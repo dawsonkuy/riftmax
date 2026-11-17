@@ -65,6 +65,8 @@
     .ranges { display: flex; gap: 4px; border: 1px solid var(--subtle-line); border-radius: 9px; background: #202328; padding: 3px; }
     .range { border: 0; background: none; color: var(--muted); padding: 6px 9px; border-radius: 6px; font-size: 11px; }
     .range.selected { background: #3b4147; color: var(--text); }
+    .range { white-space:nowrap; }
+    .chart-coverage { margin-top:8px; color:var(--muted); font-size:10px; line-height:1.5; }
     .chart { margin: 9px -6px 0; height: 115px; position: relative; }
     .chart svg { width: 100%; height: 100%; overflow: visible; display: block; }
     .chart-labels { margin-top: 4px; display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
@@ -138,7 +140,10 @@
     .champion-rank { top:5px; left:5px; border-radius:7px; }
     .champion-score { bottom:5px; right:5px; color:#90efb3; border-radius:7px; }
     .champion-score::after { content:" /100"; color:#b8c6c0; font-weight:500; font-size:8px; }
-    .champion-rank.top-rank { background:#476f50e6; color:#ecffe8; }
+    .champion-rank.top-rank { background:#f1d57b; color:#4c3804; }
+    .champion-rank.medal-gold { background:linear-gradient(130deg,#fff0b5 0%,#dba937 58%,#a57213 100%); color:#3f2c00; border-color:#fff4c9; }
+    .champion-rank.medal-silver { background:linear-gradient(130deg,#f9fbff 0%,#c1c9d3 54%,#838c99 100%); color:#243040; border-color:#ffffffaa; }
+    .champion-rank.medal-bronze { background:linear-gradient(130deg,#f5cbad 0%,#b97646 56%,#7c482a 100%); color:#291306; border-color:#edb187; }
     .champion-ranking-note { font-size:11px; color:var(--secondary); padding:0 1px 6px; line-height:1.5; }
     .champion-scoreline { display:flex; justify-content:space-between; gap:11px; align-items:center; flex-wrap:wrap; border:1px solid #3c5748; background:#24352c; margin-top:13px; border-radius:10px; padding:12px; }
     .champion-scoreline strong { color:#a6edbd; font-size:23px; letter-spacing:-.5px; }
@@ -194,6 +199,9 @@
       .champion-tile-win { font-size:11px; }
       .app-icon { border-radius:20%; }
       .champion-rank, .champion-score { font-size:9px; padding:3px 4px; }
+      .ranges { gap:2px; }
+      .range { font-size:10px; padding:6px 5px; }
+      .chart-coverage { font-size:9px; }
       .champion-score::after { font-size:7px; }
       .champ-score-breakdown { gap:5px; }
       .champ-breakdown-cell { padding:8px 5px; }
@@ -323,18 +331,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 4v7h-7"/></svg> Update
       </button>
     </section>
-    <section class="surface performance" aria-label="Recent performance">
-      <div class="performance-head"><div class="section-title">Recent performance</div><div class="performance-subtitle" id="performance-range">Last 20 games</div></div>
-      <div class="performance-grid" id="performance-grid" aria-live="polite"></div>
-    </section>
     <section class="surface lp-panel" aria-label="Ranked history and play sessions">
       <div id="ranked-history">
       <div class="panel-top">
-        <div><div class="section-title" id="history-heading">LP History</div><div class="lp-change"><strong id="lp-change">+23 LP</strong><span id="lp-subtitle">last 10 games</span></div></div>
-        <div class="ranges" aria-label="LP graph game range"><button class="range selected" data-range="10" aria-pressed="true">10</button><button class="range" data-range="20" aria-pressed="false">20</button><button class="range" data-range="50" aria-pressed="false">50</button></div>
+        <div><div class="section-title" id="history-heading">LP History</div><div class="lp-change"><strong id="lp-change">+23 LP</strong><span id="lp-subtitle">last 24 hours</span></div></div>
+        <div class="ranges" aria-label="LP graph time range"><button class="range selected" data-range="24h" aria-pressed="true">24h</button><button class="range" data-range="7d" aria-pressed="false">7d</button><button class="range" data-range="month" aria-pressed="false">Month</button><button class="range" data-range="season" aria-pressed="false">Season</button></div>
       </div>
       <div class="chart-wrap"><div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><g id="chart-points"></g></svg></div><div class="chart-tooltip" id="chart-tooltip" hidden role="status"></div></div>
-      <div class="chart-labels"><span id="chart-start">10 games ago</span><span>Most recent game</span></div>
+      <div class="chart-labels"><span id="chart-start">24 hours ago</span><span>Now</span></div><div id="chart-coverage" class="chart-coverage">Demo LP history · available matches only, not complete ranked history</div>
       </div>
       <div class="section-title sessions-title" id="sessions-title" hidden>Play sessions</div>
       <div class="last-session" aria-label="Last play session LP change (illustrative)">
@@ -342,6 +346,10 @@
         <div class="last-session-stats"><strong class="last-session-lp" id="last-session-lp">+44 LP</strong><span class="last-session-record" id="last-session-record">2W · 0L</span></div>
       </div>
       <details class="session-details"><summary>View previous sessions</summary><div class="session-history" id="session-history"></div></details>
+    </section>
+    <section class="surface performance" aria-label="Recent performance">
+      <div class="performance-head"><div class="section-title">Recent performance</div><div class="performance-subtitle" id="performance-range">Last 20 games</div></div>
+      <div class="performance-grid" id="performance-grid" aria-live="polite"></div>
     </section>
     <div class="content-tabs" role="tablist" aria-label="Profile sections"><button role="tab" id="tab-matches" aria-selected="true" class="tab active">Match History</button><button role="tab" id="tab-champions" aria-selected="false" class="tab">Champions</button></div>
     <section id="matches-view" role="tabpanel" aria-labelledby="tab-matches">
@@ -445,7 +453,7 @@
       article.setAttribute('aria-expanded', String(!expanded));
       button.setAttribute('aria-expanded', String(!expanded));
     });
-    document.querySelectorAll('.range').forEach(b => b.addEventListener('click', () => renderChart(Number(b.dataset.range))));
+    document.querySelectorAll('.range').forEach(b => b.addEventListener('click', () => renderChart(b.dataset.range)));
     document.getElementById('remakes').addEventListener('change', renderMatches);
     document.getElementById('load-more').addEventListener('click', () => {visibleCount+=8;renderMatches();});
     document.getElementById('refresh').addEventListener('click', () => toast('This is a visual prototype. Player refresh will use the Riot API.'));
@@ -473,7 +481,7 @@
       aram: { label:'ARAM', ranked:false, season:[57,51] }
     };
     let activeMode = 'solo';
-    let activeRange = 10;
+    let activeRange = '24h';
     let visibleCount = 8;
     let activeChampion = null;
     let selectedChampion = null;
@@ -508,7 +516,12 @@
       ['Yasuo','win',10,7,9,24,7200],['Jinx','win',13,5,8,21,7310],
       ['LeeSin','loss',4,8,7,-22,7440],['Ahri','win',8,4,10,23,8800],
       ['Orianna','loss',4,6,8,-22,8900],['Jinx','win',11,4,6,22,9020],
-      ['Yasuo','win',7,5,9,20,10080]
+      ['Yasuo','win',7,5,9,20,10080],
+      // Older demo history for Month and Season selectors (not real user data).
+      ['Ahri','loss',4,7,11,-21,16900],['Jinx','win',10,4,9,24,21600],
+      ['LeeSin','win',8,4,12,22,28100],['Orianna','loss',3,8,7,-23,36200],
+      ['Yasuo','win',12,6,6,24,59500],['Ahri','win',8,3,12,21,89000],
+      ['Jinx','loss',5,7,9,-22,126000]
     ];
     function buildSeed(row,mode,i) {
       const ranked = modeMeta[mode].ranked;
@@ -537,7 +550,10 @@
       ['LeeSin','win',5,3,16,25,1440],['Ahri','win',9,2,7,21,1510],
       ['Orianna','loss',2,6,10,-20,3030],['Jinx','loss',5,8,6,-22,3140],
       ['Yasuo','win',12,5,5,25,4330],['LeeSin','loss',3,8,6,-21,4510],
-      ['Ahri','win',7,4,8,22,5800],['Jinx','win',10,4,10,24,5960]
+      ['Ahri','win',7,4,8,22,5800],['Jinx','win',10,4,10,24,5960],
+      ['Orianna','win',8,3,9,25,13800],['Yasuo','loss',5,9,8,-21,28000],
+      ['Jinx','loss',4,8,8,-20,47000],['Ahri','win',10,4,10,24,82000],
+      ['LeeSin','win',6,4,12,21,129000]
     ];
     const draftSeed = [
       ['Jinx','win',12,5,8,0,190],['Ahri','win',7,2,13,0,240],
@@ -769,7 +785,7 @@
           'Rank '+g.position+', '+prettyChampion(g.name)+', score '+g.scoring.total+' of 100, '+g.games+' games, '+rate+' percent win rate. '+
           (selected?'Collapse':'Expand')+' details">'+
           '<span class="app-icon">'+championIcon(g.name)+
-          '<span class="champion-rank'+(g.position===1?' top-rank':'')+'">#'+g.position+'</span>'+
+          '<span class="champion-rank'+(g.position===1?' medal-gold':g.position===2?' medal-silver':g.position===3?' medal-bronze':'')+'">#'+g.position+'</span>'+
           '<span class="champion-score" title="Riftmax Score '+g.scoring.total+'/100">'+g.scoring.total+'</span></span>'+
           '<span class="champion-tile-name" title="'+prettyChampion(g.name)+'">'+prettyChampion(g.name)+'</span>'+
           '<span class="champion-tile-games">'+g.games+' '+(g.games===1?'game':'games')+'</span>'+
@@ -782,51 +798,78 @@
       const lp=Math.max(0,Math.round(rating-ix*100));
       return meta.tiers[ix]+' · '+lp+' LP';
     }
+    // Queue-specific cumulative LP history using available demo match timestamps.
+    // Season means the loaded tracked portion of the season, not a guarantee of complete historical data.
     function renderChart(range) {
+      const ranges={ '24h':{minutes:1440,label:'24 hours ago',caption:'last 24 hours'},
+                     '7d':{minutes:10080,label:'7 days ago',caption:'last 7 days'},
+                     'month':{minutes:43200,label:'30 days ago',caption:'last 30 days'},
+                     'season':{minutes:Infinity,label:'Oldest loaded game',caption:'loaded season history'} };
+      if(!ranges[range])range='24h';
       activeRange=range;
-      const meta=modeMeta[activeMode],ranked=meta.ranked;
-      const all=playable(activeMode), chosen=all.slice(0,range).reverse();
-      let initial=ranked?meta.index*100+meta.lp-chosen.reduce((a,m)=>a+m.lpDelta,0):0;
-      const chartData=[{value:initial,match:null}],total=chosen.length;
-      chosen.forEach(m=>{const v=chartData[chartData.length-1].value+(ranked?m.lpDelta:m.result==='win'?1:-1);chartData.push({value:v,match:m});});
-      const values=chartData.map(p=>p.value), width=640,height=110,pad=10;
-      const min=Math.min(...values)-Math.max(2,ranked?5:1),max=Math.max(...values)+Math.max(2,ranked?5:1);
-      const coords=values.map((v,i)=>[pad+(i/Math.max(1,values.length-1))*(width-2*pad),pad+(1-(v-min)/(max-min))*(height-2*pad)]);
-      const path='M '+coords.map(p=>p.map(n=>n.toFixed(2)).join(' ')).join(' L ');
-      const first=coords[0],last=coords[coords.length-1],change=values[values.length-1]-values[0];
+      const setting=ranges[range],meta=modeMeta[activeMode],all=playable(activeMode);
+      const newestFirst=all.slice().sort((a,b)=>a.minutesAgo-b.minutesAgo);
+      const selected=newestFirst.filter(m=>m.minutesAgo<=setting.minutes).reverse();
+      const total=selected.length,ageLimit=range==='season'
+        ? Math.max(1440,...newestFirst.map(g=>g.minutesAgo+g.durationMinutes)) : setting.minutes;
+      // Match outcomes are stored newest-first. Build a baseline from the currently displayed LP.
+      // This avoids counting outside-window games in the requested interval's delta.
+      const change=selected.reduce((acc,m)=>acc+m.lpDelta,0);
+      const baseline=meta.index*100+meta.lp-change;
+      const data=[{value:baseline,match:null,minutesAgo:ageLimit}];
+      for(const match of selected) data.push({
+        value:data[data.length-1].value+match.lpDelta,match,minutesAgo:match.minutesAgo
+      });
+      const width=640,height=110,pad=10,values=data.map(p=>p.value);
+      const min=Math.min(...values)-5,max=Math.max(...values)+5;
+      const coords=data.map(p=>[
+        pad+(1-Math.max(0,Math.min(ageLimit,p.minutesAgo))/ageLimit)*(width-2*pad),
+        pad+(1-(p.value-min)/(max-min))*(height-2*pad)
+      ]);
+      const line='M '+coords.map(point=>point.map(v=>v.toFixed(2)).join(' ')).join(' L ');
+      const first=coords[0],last=coords[coords.length-1];
       const color=change>=0?'#67d99a':'#fa8188';
-      document.getElementById('chart-line').setAttribute('d',path);
+      const headline=document.getElementById('lp-change');
+      headline.textContent=(total?signNumber(change):'0')+' LP';headline.style.color=color;
+      document.getElementById('lp-subtitle').textContent=setting.caption+' · '+total+' '+(total===1?'game':'games');
+      document.getElementById('history-heading').textContent='LP History';
+      document.getElementById('chart-start').textContent=setting.label;
+      document.getElementById('chart-coverage').textContent=
+        (range==='season'?'Season: ':'')+'Showing '+total+' tracked demo '+(total===1?'game':'games')+
+        '. Only available mock history is shown; actual Riot LP snapshots are not connected.';
+      document.querySelectorAll('.range').forEach(b=>{
+        const active=b.dataset.range===range;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active));
+      });
+      document.getElementById('chart-line').setAttribute('d',line);
       document.getElementById('chart-line').setAttribute('stroke',color);
-      document.getElementById('chart-area').setAttribute('d',path+' L '+last[0]+' '+height+' L '+first[0]+' '+height+' Z');
+      document.getElementById('chart-area').setAttribute('d',line+' L '+last[0]+' '+height+' L '+first[0]+' '+height+' Z');
       document.querySelector('#chart-fill stop').setAttribute('stop-color',color);
       document.querySelector('#chart-fill stop:last-child').setAttribute('stop-color',color);
       document.getElementById('chart-tooltip').hidden=true;
-      document.getElementById('chart-points').innerHTML=chartData.slice(1).map((item,j)=>{
-        const i=j+1,x=coords[i][0].toFixed(2),y=coords[i][1].toFixed(2),m=item.match;
-        const diff=Math.floor(values[i]/100)-Math.floor(values[i-1]/100);
-        const event=ranked?(diff>0?'Promotion':diff<0?'Demotion':''):'';
-        const pointColor=m.result==='win'?'#67d99a':'#fa8188',radius=range===50?3.9:5;
-        const label=prettyChampion(m.champion)+' · '+(m.result==='win'?'Victory':'Defeat')+' · '+(ranked?signNumber(m.lpDelta)+' LP':'unranked')+' · '+(ranked?rankAt(item.value,meta):'net wins '+signNumber(item.value))+(event?' · '+event:'');
-        return '<circle class="chart-pip" data-dot="'+j+'" data-x="'+x+'" cx="'+x+'" cy="'+y+'" r="'+radius+'" fill="'+pointColor+
-          '" stroke="'+(event?'#efd28a':'#23262b')+'" stroke-width="'+(event?'3':'1.5')+'" tabindex="0" role="button" aria-label="'+label+'"><title>'+label+'</title></circle>'+
-          (event?'<text class="chart-event" x="'+x+'" y="'+(Math.max(9,Number(y)-11))+'" text-anchor="middle">'+(diff>0?'▲':'▼')+'</text>':'');
-      }).join('');
-      document.getElementById('history-heading').textContent=ranked?'LP History':'Recent Form';
-      const headline=document.getElementById('lp-change');
-      headline.textContent=ranked?signNumber(change)+' LP':signNumber(change)+' net wins';
-      headline.style.color=color;
-      document.getElementById('lp-subtitle').textContent='last '+total+' matches'+(total<range?' of '+range+' requested':'');
-      document.getElementById('chart-start').textContent=total+' games ago';
-      document.getElementById('lp-chart').setAttribute('aria-label',(ranked?'Illustrative ranked LP':'Illustrative net wins')+' history, '+total+' games');
-      document.querySelectorAll('.range').forEach(b=>{const selected=Number(b.dataset.range)===range;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
-      renderChart.tooltipData=chartData.slice(1).map((p,j)=>{
-        const m=p.match,diff=Math.floor(values[j+1]/100)-Math.floor(values[j]/100);
-        const event=ranked?(diff>0?'PROMOTION':diff<0?'DEMOTION':''):'';
-        return '<div style="font-weight:750">'+prettyChampion(m.champion)+' · '+(m.result==='win'?'Victory':'Defeat')+'</div>'+
-          '<div class="'+(m.result==='loss'?'down':'')+'"><strong>'+(ranked?signNumber(m.lpDelta)+' LP':m.result==='win'?'Win':'Loss')+'</strong></div>'+
-          '<div>'+(ranked?rankAt(p.value,meta):'Running net wins: '+signNumber(p.value))+'</div>'+
-          (event?'<div style="color:#efd28a;font-weight:750">'+event+'</div>':'')+'<div style="color:#87929d">'+m.ago+' · '+meta.label+'</div>';
-      });
+      const dots=[];
+      const tips=[];
+      for(let j=0;j<selected.length;j++){
+        const m=data[j+1].match,i=j+1,x=coords[i][0].toFixed(2),y=coords[i][1].toFixed(2),
+              diff=Math.floor(values[i]/100)-Math.floor(values[i-1]/100),
+              event=diff>0?'PROMOTION':diff<0?'DEMOTION':'',
+              pointColor=m.result==='win'?'#67d99a':'#fa8188',
+              radius=total>30?3.3:total>12?4.2:5,
+              label=prettyChampion(m.champion)+' · '+(m.result==='win'?'Victory':'Defeat')+
+                ' · '+signNumber(m.lpDelta)+' LP · '+rankAt(data[i].value,meta)+(event?' · '+event:'');
+        dots.push('<circle class="chart-pip" data-dot="'+j+'" data-x="'+x+'" cx="'+x+'" cy="'+y+
+          '" r="'+radius+'" fill="'+pointColor+'" stroke="'+(event?'#efd28a':'#23262b')+
+          '" stroke-width="'+(event?'3':'1.5')+'" tabindex="0" role="button" aria-label="'+label+'"><title>'+label+'</title></circle>'+
+          (event?'<text class="chart-event" x="'+x+'" y="'+Math.max(9,Number(y)-11)+'" text-anchor="middle">'+
+          (diff>0?'▲':'▼')+'</text>':''));
+        tips.push('<div style="font-weight:750">'+prettyChampion(m.champion)+' · '+(m.result==='win'?'Victory':'Defeat')+'</div>'+
+          '<div><strong class="'+(m.result==='loss'?'down':'')+'">'+signNumber(m.lpDelta)+' LP</strong></div>'+
+          '<div>'+rankAt(data[i].value,meta)+'</div>'+
+          (event?'<div style="color:#efd28a;font-weight:750">'+event+'</div>':'')+
+          '<div style="color:#87929d">'+m.ago+' · '+meta.label+'</div>');
+      }
+      document.getElementById('chart-points').innerHTML=dots.join('');
+      document.getElementById('lp-chart').setAttribute('aria-label','Illustrative LP history for '+setting.caption+', '+total+' tracked games');
+      renderChart.tooltipData=tips;
     }
     function showDot(dot) {
       const i=Number(dot.dataset.dot),node=document.getElementById('chart-tooltip');
