@@ -6,6 +6,17 @@ Standalone dark-charcoal Riftmax frontend with a secure Cloudflare Worker backen
 
 Open [index.html](./index.html) in a browser, or use the [GitHub HTMLPreview](https://htmlpreview.github.io/?https://github.com/dawsonkuy/riftmax/blob/main/riftmax/index.html). The prototype is a single HTML file with inline CSS and JavaScript: no npm install or build step is required.
 
+## Branding and official ranked emblems
+
+The page background is **black**, and the provisional wordmark is bold blue **RM**. Dark charcoal cards remain for contrast.
+
+Current ranked Solo/Duo and Flex tiers use official League of Legends game-client emblem artwork, with a smaller matching emblem beside the verified **tracked peak**. All ten tiers are supported (Iron through Challenger). Unranked and non-ranked modes do not show a misleading emblem.
+
+The images are loaded from CommunityDragon's pinned 16.2 mirror of Riot's client assets:
+https://raw.communitydragon.org/16.2/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/
+
+Riot also provides official rank emblem bundles at https://developer.riotgames.com/docs/lol#ranked-info. The website retains plain-text rank/LP as a fallback if the third-party image mirror is unavailable. The CDN image requests contain no API key.
+
 ## Interactive features
 
 - Horizontal **six-option game-mode tab selector** across the top: All, Ranked Solo/Duo, Ranked Flex, Normal Draft, ARAM, and Other. 'Other' preserves special/rotating queues. Profile, session, champion performance and match-history data change with the selected mode. Only ranked modes show the LP graph.
