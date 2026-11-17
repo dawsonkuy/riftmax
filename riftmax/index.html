@@ -382,8 +382,8 @@
     });
     document.querySelectorAll('.range').forEach(b => b.addEventListener('click', () => renderChart(Number(b.dataset.range))));
     document.getElementById('remakes').addEventListener('change', renderMatches);
-    document.getElementById('load-more').addEventListener('click', () => toast('More matches will load when the Riot API is connected.'));
-    document.getElementById('queue-filter').addEventListener('click', () => toast('Queue filtering is coming after Riot API integration.'));
+    document.getElementById('load-more').addEventListener('click', () => {visibleCount+=8;renderMatches();});
+    document.getElementById('queue-filter').addEventListener('click', () => {document.getElementById('mode-select').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('mode-select').focus();});
     document.getElementById('refresh').addEventListener('click', () => toast('This is a visual prototype. Player refresh will use the Riot API.'));
     document.querySelectorAll('[data-preview]').forEach(b => b.addEventListener('click', () => toast(b.dataset.preview + ' page is not part of this UI mockup yet.')));
     document.getElementById('search-form').addEventListener('submit', e => { e.preventDefault(); toast('Search will be connected to Riot ID lookup.'); });
@@ -400,9 +400,279 @@
     }
     document.getElementById('tab-matches').addEventListener('click',() => switchTab('matches'));
     document.getElementById('tab-champions').addEventListener('click',() => switchTab('champions'));
-    renderMatches();
-    renderChampions();
-    renderChart(10);
+
+    // Enhanced Riftmax UI demo. All values are illustrative until Riot + ranked snapshots are connected.
+    const modeMeta = {
+      solo: { label:'Ranked Solo/Duo', ranked:true, current:'Gold III', lp:82, rankShort:'G III', index:1, tiers:['Gold IV','Gold III','Gold II','Gold I','Platinum IV','Platinum III'], peak:'Gold II · 18 LP', season:[112,90] },
+      flex: { label:'Ranked Flex', ranked:true, current:'Silver I', lp:46, rankShort:'S I', index:1, tiers:['Silver II','Silver I','Gold IV','Gold III','Gold II','Gold I'], peak:'Gold IV · 32 LP', season:[46,39] },
+      draft: { label:'Normal Draft', ranked:false, season:[39,34] },
+      aram: { label:'ARAM', ranked:false, season:[57,51] }
+    };
+    let activeMode = 'solo';
+    let activeRange = 10;
+    let visibleCount = 8;
+    let activeChampion = null;
+    const baseMins = [34,120,300,1470,1510,2900];
+    const baseStat = [
+      [192,24600,19,13800,19900,[3089,3020,3135,3102,1058,3157],['Flash','Teleport']],
+      [286,33100,12,15900,27800,[3031,3006,3094,3085,3036,1055],['Flash','Heal']],
+      [124,15400,31,11100,19000,[6630,3047,3053,3071,3065,1036],['Flash','Smite']],
+      [241,28800,15,15200,25200,[3031,3006,3046,3072,3036,1055],['Flash','Ignite']],
+      [0,0,0,0,0,[],[]],
+      [267,26100,22,14600,29200,[3089,3020,3165,3135,3102,1058],['Flash','Teleport']]
+    ];
+    function prettyChampion(name) { return name === 'LeeSin' ? 'Lee Sin' : name; }
+    function durationMin(s) { const x = String(s).match(/(\d+)m(?:\s*(\d+)s)?/); return x ? Number(x[1]) + Number(x[2]||0)/60 : 30; }
+    function minutesText(n) { const whole = Math.max(1,Math.round(n)); return whole >= 60 ? Math.floor(whole/60)+'h '+(whole%60 ? whole%60+'m' : '') : whole+'m'; }
+    function signNumber(n) { return (n>0?'+':'')+n; }
+    function agoText(n) { return n<60 ? Math.round(n)+'m ago' : n<1440 ? Math.round(n/60)+'h ago' : Math.round(n/1440)+'d ago'; }
+    function makeMatch(raw, mode, idx, age) {
+      const duration = durationMin(raw.duration);
+      const kdaBits = raw.kda.split('/').map(v=>Number(v.trim()));
+      const b = baseStat[idx] || baseStat[0];
+      return Object.assign({},raw,{modeKey:mode,minutesAgo:age,kills:kdaBits[0],deaths:kdaBits[1],assists:kdaBits[2],
+        durationMinutes:duration,cs:b[0],damage:b[1],vision:b[2],gold:b[3],opponentDamage:b[4],items:b[5],spells:b[6],
+        lpDelta: parseInt(raw.lp,10)||0});
+    }
+    const soloGames = matches.map((m,i)=>makeMatch(m,'solo',i,baseMins[i]));
+    const soloAdd = [
+      ['Jinx','loss',4,7,5,-23,3120],['Ahri','win',10,4,9,22,3200],
+      ['Orianna','win',5,2,14,25,4640],['Yasuo','loss',6,9,4,-22,4700],
+      ['Jinx','win',12,3,7,25,4810],['LeeSin','loss',4,9,8,-24,5900],
+      ['Ahri','win',9,5,11,22,6120],['Orianna','loss',3,6,4,-19,6260],
+      ['Yasuo','win',10,7,9,24,7200],['Jinx','win',13,5,8,21,7310],
+      ['LeeSin','loss',4,8,7,-22,7440],['Ahri','win',8,4,10,23,8800],
+      ['Orianna','loss',4,6,8,-22,8900],['Jinx','win',11,4,6,22,9020],
+      ['Yasuo','win',7,5,9,20,10080]
+    ];
+    function buildSeed(row,mode,i) {
+      const ranked = modeMeta[mode].ranked;
+      const champ = row[0], result = row[1], k=row[2], d=row[3], a=row[4], lp=ranked?row[5]:0, age=row[6];
+      const dur=24+(i*7)%17, seconds=(i*13)%60, cs=mode==='aram'?38+i*5:138+(i*19)%151;
+      const damage=14400+(i*2129)%20200, vision=mode==='aram'?4+i%6:12+i%21, gold=10400+(i*599)%7100;
+      const itemsByChamp = {
+        Ahri:[3089,3020,3135,3102,3157,1058],Orianna:[3089,3020,3165,3135,3102,1058],
+        Jinx:[3031,3006,3094,3085,3036,1055],Yasuo:[3031,3006,3046,3072,3036,1055],
+        LeeSin:[6630,3047,3053,3071,3065,1036],Thresh:[3190,3117,3109,3067,3083,1028]
+      };
+      const spells=champ==='LeeSin'?['Flash','Smite']:champ==='Jinx'?['Flash','Heal']:['Flash','Teleport'];
+      const mine=k+' / '+d+' / '+a;
+      return {id:(mode==='solo'?10:mode==='flex'?100:mode==='draft'?200:300)+i,champion:champ,result,kda:mine,
+        lp:ranked?signNumber(lp)+' LP':'',lpDelta:lp,mode:modeMeta[mode].label,modeKey:mode,ago:agoText(age),
+        minutesAgo:age,duration:dur+'m '+String(seconds).padStart(2,'0')+'s',durationMinutes:dur+seconds/60,
+        kills:k,deaths:d,assists:a,cs,damage,vision,gold,opponentDamage:Math.round(damage*(0.76+(i%5)*.12)),
+        items:itemsByChamp[champ]||itemsByChamp.Ahri,spells,
+        ally:[[prettyChampion(champ),mine],['Vi','4/5/13'],['Gnar','5/3/7'],['Jinx','9/4/8'],['Nautilus','1/5/17']],
+        enemy:[['Yasuo','6/6/8'],['Lee Sin','4/7/10'],['Darius','3/8/6'],['Caitlyn','8/5/4'],['Lulu','1/6/11']]};
+    }
+    soloAdd.forEach((row,i)=>soloGames.push(buildSeed(row,'solo',i)));
+    const flexSeed = [
+      ['Ahri','win',8,4,8,24,62],['Orianna','loss',3,7,8,-22,112],
+      ['Jinx','win',11,5,9,23,250],['Yasuo','loss',6,7,4,-24,320],
+      ['LeeSin','win',5,3,16,25,1440],['Ahri','win',9,2,7,21,1510],
+      ['Orianna','loss',2,6,10,-20,3030],['Jinx','loss',5,8,6,-22,3140],
+      ['Yasuo','win',12,5,5,25,4330],['LeeSin','loss',3,8,6,-21,4510],
+      ['Ahri','win',7,4,8,22,5800],['Jinx','win',10,4,10,24,5960]
+    ];
+    const draftSeed = [
+      ['Jinx','win',12,5,8,0,190],['Ahri','win',7,2,13,0,240],
+      ['Yasuo','loss',4,9,6,0,900],['Orianna','win',6,3,15,0,1020],
+      ['LeeSin','loss',2,8,8,0,2000],['Ahri','win',8,5,12,0,2080],
+      ['Jinx','loss',6,7,9,0,3100],['Yasuo','win',11,5,5,0,3210],
+      ['Orianna','win',5,2,14,0,4120],['LeeSin','loss',4,9,8,0,4290],
+      ['Ahri','loss',4,6,11,0,5600],['Jinx','win',10,4,9,0,5690]
+    ];
+    const aramSeed = [
+      ['Ahri','win',14,6,21,0,50],['Jinx','loss',10,11,14,0,100],
+      ['Yasuo','win',15,8,9,0,175],['Orianna','win',9,5,24,0,1180],
+      ['LeeSin','loss',8,12,9,0,1270],['Ahri','loss',6,9,15,0,1400],
+      ['Jinx','win',19,7,18,0,2530],['Yasuo','loss',9,11,7,0,2630],
+      ['Orianna','win',12,6,26,0,2710],['Ahri','win',16,7,12,0,4100],
+      ['Jinx','loss',9,13,11,0,4210],['Yasuo','win',14,8,11,0,4320]
+    ];
+    const modeGames = {
+      solo:soloGames,flex:flexSeed.map((r,i)=>buildSeed(r,'flex',i)),
+      draft:draftSeed.map((r,i)=>buildSeed(r,'draft',i)),
+      aram:aramSeed.map((r,i)=>buildSeed(r,'aram',i))
+    };
+    function playable(mode) { return modeGames[mode].filter(m=>m.result!=='remake'); }
+    function getSessions(mode) {
+      const list = modeGames[mode].slice().sort((a,b)=>a.minutesAgo-b.minutesAgo);
+      const groups=[];
+      for(const game of list) {
+        const recent=groups[groups.length-1];
+        // A new session begins after a gap of over 2 hours between recorded game endings.
+        if(!recent || game.minutesAgo-recent[recent.length-1].minutesAgo>120) groups.push([game]);
+        else recent.push(game);
+      }
+      return groups.map((g,i)=>{
+        const valid=g.filter(m=>m.result!=='remake');
+        const w=valid.filter(m=>m.result==='win').length,l=valid.filter(m=>m.result==='loss').length;
+        const elapsed=Math.round(g[g.length-1].minutesAgo+g[g.length-1].durationMinutes-g[0].minutesAgo);
+        return {id:i,games:g.length,w,l,lp:valid.reduce((acc,m)=>acc+m.lpDelta,0),duration:elapsed,ago:g[0].ago};
+      });
+    }
+    function renderProfile() {
+      const m=modeMeta[activeMode],w=m.season[0],l=m.season[1];
+      document.getElementById('rank-mark').textContent=m.ranked?m.rankShort:'—';
+      document.getElementById('rank-name').textContent=m.ranked?m.current+' · '+m.lp+' LP':m.label+' · No ranked LP';
+      document.getElementById('peak-rank').hidden=!m.ranked;
+      if(m.ranked) document.getElementById('peak-rank').innerHTML='Season peak: <strong>'+m.peak+'</strong>';
+      document.querySelector('.record').innerHTML='<span><strong>'+w+'W</strong> / <strong>'+l+'L</strong></span><span>·</span><span>'+(w/(w+l)*100).toFixed(1)+'% win rate · demo season</span>';
+    }
+    function renderPerformance() {
+      const games=playable(activeMode).slice(0,20),w=games.filter(m=>m.result==='win').length,l=games.length-w;
+      const kills=games.reduce((a,m)=>a+m.kills,0), deaths=games.reduce((a,m)=>a+m.deaths,0),assists=games.reduce((a,m)=>a+m.assists,0);
+      const first=games[0],streak=first?games.findIndex(m=>m.result!==first.result):-1;
+      const streakCount=first?(streak<0?games.length:streak):0;
+      document.getElementById('performance-range').textContent='Last '+games.length+' games · '+modeMeta[activeMode].label;
+      const stats=[
+        ['Win rate',games.length?(w/games.length*100).toFixed(0)+'%':'—',w+'W · '+l+'L'],
+        ['Average KDA',games.length?((kills+assists)/Math.max(1,deaths)).toFixed(2):'—','('+(kills/games.length).toFixed(1)+' / '+(deaths/games.length).toFixed(1)+' / '+(assists/games.length).toFixed(1)+')'],
+        ['Current streak',streakCount?(first.result==='win'?'W':'L')+streakCount:'—',streakCount?(first.result==='win'?'Win streak':'Loss streak'):'No games']
+      ];
+      document.getElementById('performance-grid').innerHTML=stats.map(x=>'<div class="performance-stat"><small>'+x[0]+'</small><strong>'+x[1]+'</strong><span>'+x[2]+'</span></div>').join('');
+    }
+    function renderSessions() {
+      const meta=modeMeta[activeMode],sessions=getSessions(activeMode),latest=sessions[0];
+      const v=document.getElementById('last-session-lp');
+      v.textContent=latest?(meta.ranked?signNumber(latest.lp)+' LP':latest.games+' games'):'—';
+      v.classList.toggle('negative',!!latest&&meta.ranked&&latest.lp<0);
+      v.classList.toggle('positive',!!latest&&meta.ranked&&latest.lp>0);
+      document.getElementById('last-session-record').textContent=latest?latest.w+'W · '+latest.l+'L · '+minutesText(latest.duration):'No games';
+      document.getElementById('last-session-note').textContent=latest?'Ended '+latest.ago+' · demo':'No recent session';
+      document.getElementById('session-history').innerHTML=sessions.slice(1,6).map((s,i)=>
+        '<div class="session-row"><div><span>Session '+(i+2)+' · '+s.ago+'</span><small>'+s.games+' games · '+s.w+'W / '+s.l+'L · '+minutesText(s.duration)+'</small></div><strong class="'+(s.lp<0?'negative':'positive')+'">'+(meta.ranked?signNumber(s.lp)+' LP':s.w+'W / '+s.l+'L')+'</strong></div>'
+      ).join('')||'<div class="form-note">No earlier sessions in this demo.</div>';
+    }
+    function itemImg(id) { return '<span class="item-icon" title="Item '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/'+id+'.png" alt="Item '+id+'" loading="lazy" onerror="this.remove()"></span>'; }
+    function spellImg(id) { return '<span class="spell-icon" title="Summoner '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/Summoner'+id+'.png" alt="'+id+'" loading="lazy" onerror="this.remove()"></span>'; }
+    function renderMatches() {
+      const meta=modeMeta[activeMode],showRemakes=document.getElementById('remakes').checked;
+      const source=modeGames[activeMode].filter(m=>m.result!=='remake'||showRemakes);
+      const filtered=activeChampion?source.filter(m=>m.champion===activeChampion):source;
+      const shown=filtered.slice(0,visibleCount);
+      const box=document.getElementById('match-list');
+      box.innerHTML=shown.map(m=>{
+        const status=m.result==='win'?'Victory':m.result==='loss'?'Defeat':'Remake';
+        const score=(players,title,cls,isAlly)=>'<div><div class="team-title '+cls+'">'+title+'</div>'+
+          players.map((p,i)=>'<div class="team-player '+(isAlly&&i===0?'me':'')+'"><div class="player-identity">'+championIcon(p[0])+
+            '<span class="player-name">'+p[0]+'</span></div><small>'+p[1]+'</small></div>').join('')+'</div>';
+        const stats=[['KDA',m.kda],['CS / min',(m.cs/m.durationMinutes).toFixed(1)],['Damage',(m.damage/1000).toFixed(1)+'k'],
+          ['Gold',(m.gold/1000).toFixed(1)+'k'],['Vision',String(m.vision)]];
+        const damagePct=m.opponentDamage?Math.round(m.damage/(m.damage+m.opponentDamage)*100):50;
+        return '<article class="surface match '+m.result+'" id="match-'+m.id+'" aria-expanded="false"><button class="match-button" aria-controls="detail-'+m.id+'" aria-expanded="false" data-match="'+m.id+'">'+
+          championIcon(m.champion)+'<div class="match-primary"><div class="match-top"><span class="result">'+status+'</span><span class="match-mode">'+meta.label+
+          '</span><span class="match-time">· '+m.ago+'</span></div><div class="match-bottom"><span class="champ-name">'+prettyChampion(m.champion)+'</span><span class="kda">'+m.kda+
+          '</span></div></div>'+(meta.ranked?'<span class="lp-value">'+m.lp+'</span>':'')+
+          '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>'+
+          '<div class="match-extra" id="detail-'+m.id+'"><div class="extra-head"><span><strong>'+meta.label+'</strong> · '+m.duration+
+          '</span><span>'+m.ago+' · demo match</span></div><div class="detail-grid">'+stats.map(x=>'<div class="detail-stat"><strong>'+x[1]+'</strong><small>'+x[0]+'</small></div>').join('')+
+          '</div><div class="build-row"><div class="build-group"><span class="build-label">Build</span>'+m.items.map(itemImg).join('')+'</div><div class="build-group"><span class="build-label">Spells</span>'+m.spells.map(spellImg).join('')+'</div></div>'+
+          (m.result==='remake'?'':'<div class="detail-meter"><span>Damage: '+(m.damage/1000).toFixed(1)+'k you</span><div class="detail-meter-track"><div class="detail-meter-fill" style="width:'+damagePct+'%"></div></div><span>'+(m.opponentDamage/1000).toFixed(1)+'k opponent</span></div>')+
+          '<div class="scoreboard">'+score(m.ally,'Your team','blue',true)+score(m.enemy,'Enemy team','red',false)+'</div></div></article>';
+      }).join('')||'<div class="form-note">No matches found for this champion in the selected mode.</div>';
+      const more=document.getElementById('load-more');
+      more.hidden=visibleCount>=filtered.length;
+      more.textContent='Load more matches ('+Math.max(0,filtered.length-visibleCount)+' remaining)';
+      const toolbar=document.querySelector('#matches-view .muted-note');
+      toolbar.textContent=activeChampion?'Showing '+prettyChampion(activeChampion)+' · '+meta.label:'Recent matches · '+meta.label+' · demo';
+      let clear=document.getElementById('clear-champion-filter');
+      if(activeChampion&&!clear) {
+        clear=document.createElement('button');clear.type='button';clear.id='clear-champion-filter';clear.className='filter';
+        clear.textContent='Clear champion ×';clear.addEventListener('click',()=>{activeChampion=null;visibleCount=8;renderMatches();});
+        document.querySelector('#matches-view .toolbar').appendChild(clear);
+      } else if(!activeChampion&&clear) clear.remove();
+    }
+    function renderChampions() {
+      const games=playable(activeMode),grouped={};
+      games.forEach(m=>{
+        const key=m.champion, g=grouped[key]||(grouped[key]={name:key,games:0,w:0,k:0,d:0,a:0,cs:0,minutes:0,damage:0});
+        g.games++;g.w+=m.result==='win'?1:0;g.k+=m.kills;g.d+=m.deaths;g.a+=m.assists;g.cs+=m.cs;g.minutes+=m.durationMinutes;g.damage+=m.damage;
+      });
+      document.getElementById('champions-list').innerHTML=Object.values(grouped).sort((a,b)=>b.games-a.games).map(g=>{
+        const rate=(100*g.w/g.games).toFixed(0),kda=((g.k+g.a)/Math.max(1,g.d)).toFixed(2),csm=(g.cs/g.minutes).toFixed(1),damage=(g.damage/g.games/1000).toFixed(1);
+        return '<button type="button" class="surface champion-card" data-champion="'+g.name+'" aria-label="View '+prettyChampion(g.name)+' matches">'+
+          championIcon(g.name)+'<div><div class="section-title">'+prettyChampion(g.name)+'</div><div class="muted-note" style="margin-top:5px">'+g.games+' games · '+kda+' KDA · '+csm+' CS/min · '+damage+'k avg damage</div></div>'+
+          '<div class="champ-stat"><strong>'+rate+'%</strong><small>Win rate · view matches</small></div></button>';
+      }).join('');
+    }
+    function rankAt(rating,meta) {
+      const ix=Math.max(0,Math.min(meta.tiers.length-1,Math.floor(rating/100)));
+      const lp=Math.max(0,Math.round(rating-ix*100));
+      return meta.tiers[ix]+' · '+lp+' LP';
+    }
+    function renderChart(range) {
+      activeRange=range;
+      const meta=modeMeta[activeMode],ranked=meta.ranked;
+      const all=playable(activeMode), chosen=all.slice(0,range).reverse();
+      let initial=ranked?meta.index*100+meta.lp-chosen.reduce((a,m)=>a+m.lpDelta,0):0;
+      const chartData=[{value:initial,match:null}],total=chosen.length;
+      chosen.forEach(m=>{const v=chartData[chartData.length-1].value+(ranked?m.lpDelta:m.result==='win'?1:-1);chartData.push({value:v,match:m});});
+      const values=chartData.map(p=>p.value), width=640,height=110,pad=10;
+      const min=Math.min(...values)-Math.max(2,ranked?5:1),max=Math.max(...values)+Math.max(2,ranked?5:1);
+      const coords=values.map((v,i)=>[pad+(i/Math.max(1,values.length-1))*(width-2*pad),pad+(1-(v-min)/(max-min))*(height-2*pad)]);
+      const path='M '+coords.map(p=>p.map(n=>n.toFixed(2)).join(' ')).join(' L ');
+      const first=coords[0],last=coords[coords.length-1],change=values[values.length-1]-values[0];
+      const color=change>=0?'#67d99a':'#fa8188';
+      document.getElementById('chart-line').setAttribute('d',path);
+      document.getElementById('chart-line').setAttribute('stroke',color);
+      document.getElementById('chart-area').setAttribute('d',path+' L '+last[0]+' '+height+' L '+first[0]+' '+height+' Z');
+      document.querySelector('#chart-fill stop').setAttribute('stop-color',color);
+      document.querySelector('#chart-fill stop:last-child').setAttribute('stop-color',color);
+      document.getElementById('chart-tooltip').hidden=true;
+      document.getElementById('chart-points').innerHTML=chartData.slice(1).map((item,j)=>{
+        const i=j+1,x=coords[i][0].toFixed(2),y=coords[i][1].toFixed(2),m=item.match;
+        const diff=Math.floor(values[i]/100)-Math.floor(values[i-1]/100);
+        const event=ranked?(diff>0?'Promotion':diff<0?'Demotion':''):'';
+        const pointColor=m.result==='win'?'#67d99a':'#fa8188',radius=range===50?3.9:5;
+        const label=prettyChampion(m.champion)+' · '+(m.result==='win'?'Victory':'Defeat')+' · '+(ranked?signNumber(m.lpDelta)+' LP':'unranked')+' · '+(ranked?rankAt(item.value,meta):'net wins '+signNumber(item.value))+(event?' · '+event:'');
+        return '<circle class="chart-pip" data-dot="'+j+'" data-x="'+x+'" cx="'+x+'" cy="'+y+'" r="'+radius+'" fill="'+pointColor+
+          '" stroke="'+(event?'#efd28a':'#23262b')+'" stroke-width="'+(event?'3':'1.5')+'" tabindex="0" role="button" aria-label="'+label+'"><title>'+label+'</title></circle>'+
+          (event?'<text class="chart-event" x="'+x+'" y="'+(Math.max(9,Number(y)-11))+'" text-anchor="middle">'+(diff>0?'▲':'▼')+'</text>':'');
+      }).join('');
+      document.getElementById('history-heading').textContent=ranked?'LP History':'Recent Form';
+      const headline=document.getElementById('lp-change');
+      headline.textContent=ranked?signNumber(change)+' LP':signNumber(change)+' net wins';
+      headline.style.color=color;
+      document.getElementById('lp-subtitle').textContent='last '+total+' matches'+(total<range?' of '+range+' requested':'');
+      document.getElementById('chart-start').textContent=total+' games ago';
+      document.getElementById('lp-chart').setAttribute('aria-label',(ranked?'Illustrative ranked LP':'Illustrative net wins')+' history, '+total+' games');
+      document.querySelectorAll('.range').forEach(b=>{const selected=Number(b.dataset.range)===range;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
+      renderChart.tooltipData=chartData.slice(1).map((p,j)=>{
+        const m=p.match,diff=Math.floor(values[j+1]/100)-Math.floor(values[j]/100);
+        const event=ranked?(diff>0?'PROMOTION':diff<0?'DEMOTION':''):'';
+        return '<div style="font-weight:750">'+prettyChampion(m.champion)+' · '+(m.result==='win'?'Victory':'Defeat')+'</div>'+
+          '<div class="'+(m.result==='loss'?'down':'')+'"><strong>'+(ranked?signNumber(m.lpDelta)+' LP':m.result==='win'?'Win':'Loss')+'</strong></div>'+
+          '<div>'+(ranked?rankAt(p.value,meta):'Running net wins: '+signNumber(p.value))+'</div>'+
+          (event?'<div style="color:#efd28a;font-weight:750">'+event+'</div>':'')+'<div style="color:#87929d">'+m.ago+' · '+meta.label+'</div>';
+      });
+    }
+    function showDot(dot) {
+      const i=Number(dot.dataset.dot),node=document.getElementById('chart-tooltip');
+      if(!renderChart.tooltipData[i])return;
+      node.innerHTML=renderChart.tooltipData[i];node.hidden=false;
+      node.style.left=Math.max(13,Math.min(87,Number(dot.dataset.x)/640*100))+'%';
+    }
+    const pointsEl=document.getElementById('chart-points');
+    pointsEl.addEventListener('pointerover',e=>{const dot=e.target.closest('.chart-pip');if(dot)showDot(dot);});
+    pointsEl.addEventListener('pointerout',e=>{if(e.target.closest('.chart-pip'))document.getElementById('chart-tooltip').hidden=true;});
+    pointsEl.addEventListener('focusin',e=>{const dot=e.target.closest('.chart-pip');if(dot)showDot(dot);});
+    pointsEl.addEventListener('focusout',e=>{if(e.target.closest('.chart-pip'))document.getElementById('chart-tooltip').hidden=true;});
+    pointsEl.addEventListener('click',e=>{const dot=e.target.closest('.chart-pip');if(dot)showDot(dot);});
+    document.getElementById('champions-list').addEventListener('click',e=>{
+      const card=e.target.closest('[data-champion]');if(!card)return;
+      activeChampion=card.dataset.champion;visibleCount=8;
+      switchTab('matches');renderMatches();
+      document.querySelector('.content-tabs').scrollIntoView({behavior:'smooth',block:'start'});
+    });
+    document.getElementById('mode-select').addEventListener('change',e=>{
+      activeMode=e.target.value;visibleCount=8;activeChampion=null;
+      renderEverything();
+    });
+    function renderEverything() {renderProfile();renderPerformance();renderSessions();renderMatches();renderChampions();renderChart(activeRange);}
+
+    renderEverything();
   </script>
 </body>
 </html>
