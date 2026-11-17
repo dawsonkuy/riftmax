@@ -77,10 +77,16 @@
     .last-session-record { font-size: 11px; color: var(--secondary); }
 
     /* Riftmax profile insights */
-    .mode-bar { display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 13px; }
-    .mode-bar label { color:var(--secondary); font-size:12px; font-weight:750; }
-    .mode-bar select { background:var(--card); color:var(--text); border:1px solid var(--line); padding:10px 34px 10px 13px; border-radius:10px; font-size:12px; font-weight:600; font-family:inherit; max-width:75%; cursor:pointer; }
-    .mode-bar select:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+    .mode-selector { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; padding:5px; background:#22262b; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
+    .mode-tab { min-width:0; border:1px solid transparent; border-radius:9px; padding:10px 5px 9px; color:var(--secondary); background:transparent; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-family:inherit; cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
+    .mode-tab:hover { background:#30363a; color:var(--text); }
+    .mode-tab.active { background:#343d40; border-color:#507361; color:var(--text); box-shadow:inset 0 -2px var(--green); }
+    .mode-tab:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+    .mode-tab .mode-name { font-size:12px; line-height:1.2; font-weight:750; white-space:nowrap; }
+    .mode-tab .mode-type { font-size:10px; line-height:1.2; font-weight:500; color:var(--muted); }
+    .mode-tab.active .mode-type { color:#9ec8ac; }
+    #ranked-history[hidden], #sessions-title[hidden] { display:none !important; }
+    .sessions-title { margin-bottom:4px; }
     .rank-mark.is-unranked { background:#30383b; color:#b9c4cd; }
     .peak-rank { color:var(--muted); font-size:11px; margin-top:8px; }
     .peak-rank strong { color:var(--secondary); }
@@ -134,7 +140,10 @@
       .detail-grid { gap:4px; }
       .detail-stat { padding:8px 3px; }
       .detail-stat strong { font-size:10px; }
-      .mode-bar select { max-width:74%; }
+      .mode-selector { gap:3px; padding:4px; }
+      .mode-tab { padding:10px 2px 9px; }
+      .mode-tab .mode-name { font-size:11px; }
+      .mode-tab .mode-type { font-size:9px; }
     }
     .content-tabs { display: flex; align-items: stretch; gap: 0; border-bottom: 1px solid var(--line); margin: 28px 1px 16px; }
     .tab { flex: 1 1 50%; min-width: 0; text-align: center; background: none; border: none; border-bottom: 2px solid transparent; padding: 0 12px 12px; margin-bottom: -1px; color: #8b949f; font-size: 13px; font-weight: 650; }
@@ -239,14 +248,11 @@
     </nav>
   </header>
   <main class="page">
-    <div class="mode-bar">
-      <label for="mode-select">Game mode</label>
-      <select id="mode-select" aria-label="Choose game mode">
-        <option value="solo">Ranked Solo/Duo</option>
-        <option value="flex">Ranked Flex</option>
-        <option value="draft">Normal Draft</option>
-        <option value="aram">ARAM</option>
-      </select>
+    <div class="mode-selector" role="group" aria-label="Game mode">
+      <button type="button" class="mode-tab active" data-mode="solo" aria-pressed="true"><span class="mode-name">Solo/Duo</span><span class="mode-type">Ranked</span></button>
+      <button type="button" class="mode-tab" data-mode="flex" aria-pressed="false"><span class="mode-name">Flex</span><span class="mode-type">Ranked</span></button>
+      <button type="button" class="mode-tab" data-mode="draft" aria-pressed="false"><span class="mode-name">Draft</span><span class="mode-type">Normal</span></button>
+      <button type="button" class="mode-tab" data-mode="aram" aria-pressed="false"><span class="mode-name">ARAM</span><span class="mode-type">Casual</span></button>
     </div>
     <section class="surface profile" aria-label="Player profile">
       <div class="avatar" aria-hidden="true">
@@ -266,13 +272,16 @@
       <div class="performance-head"><div class="section-title">Recent performance</div><div class="performance-subtitle" id="performance-range">Last 20 games</div></div>
       <div class="performance-grid" id="performance-grid" aria-live="polite"></div>
     </section>
-    <section class="surface lp-panel" aria-label="LP history graph">
+    <section class="surface lp-panel" aria-label="Ranked history and play sessions">
+      <div id="ranked-history">
       <div class="panel-top">
         <div><div class="section-title" id="history-heading">LP History</div><div class="lp-change"><strong id="lp-change">+23 LP</strong><span id="lp-subtitle">last 10 games</span></div></div>
         <div class="ranges" aria-label="LP graph game range"><button class="range selected" data-range="10" aria-pressed="true">10</button><button class="range" data-range="20" aria-pressed="false">20</button><button class="range" data-range="50" aria-pressed="false">50</button></div>
       </div>
       <div class="chart-wrap"><div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><g id="chart-points"></g></svg></div><div class="chart-tooltip" id="chart-tooltip" hidden role="status"></div></div>
       <div class="chart-labels"><span id="chart-start">10 games ago</span><span>Most recent game</span></div>
+      </div>
+      <div class="section-title sessions-title" id="sessions-title" hidden>Play sessions</div>
       <div class="last-session" aria-label="Last play session LP change (illustrative)">
         <div><div class="last-session-label">Last session</div><div class="last-session-note" id="last-session-note">Latest play session · demo</div></div>
         <div class="last-session-stats"><strong class="last-session-lp" id="last-session-lp">+44 LP</strong><span class="last-session-record" id="last-session-record">2W · 0L</span></div>
@@ -281,7 +290,7 @@
     </section>
     <div class="content-tabs" role="tablist" aria-label="Profile sections"><button role="tab" id="tab-matches" aria-selected="true" class="tab active">Match History</button><button role="tab" id="tab-champions" aria-selected="false" class="tab">Champions</button></div>
     <section id="matches-view" role="tabpanel" aria-labelledby="tab-matches">
-      <div class="toolbar"><span class="muted-note">Recent matches · newest first · demo data</span><button class="filter" id="queue-filter">Change mode ↑</button></div>
+      <div class="toolbar"><span class="muted-note">Recent matches · newest first · demo data</span></div>
       <div id="match-list"></div>
       <label class="show-remakes"><input type="checkbox" id="remakes" /> Show remake matches</label>
       <button class="load-more" id="load-more">Load more matches</button>
@@ -384,7 +393,6 @@
     document.querySelectorAll('.range').forEach(b => b.addEventListener('click', () => renderChart(Number(b.dataset.range))));
     document.getElementById('remakes').addEventListener('change', renderMatches);
     document.getElementById('load-more').addEventListener('click', () => {visibleCount+=8;renderMatches();});
-    document.getElementById('queue-filter').addEventListener('click', () => {document.getElementById('mode-select').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('mode-select').focus();});
     document.getElementById('refresh').addEventListener('click', () => toast('This is a visual prototype. Player refresh will use the Riot API.'));
     document.querySelectorAll('[data-preview]').forEach(b => b.addEventListener('click', () => toast(b.dataset.preview + ' page is not part of this UI mockup yet.')));
     document.getElementById('search-form').addEventListener('submit', e => { e.preventDefault(); toast('Search will be connected to Riot ID lookup.'); });
@@ -669,11 +677,25 @@
       switchTab('matches');renderMatches();
       document.querySelector('.content-tabs').scrollIntoView({behavior:'smooth',block:'start'});
     });
-    document.getElementById('mode-select').addEventListener('change',e=>{
-      activeMode=e.target.value;visibleCount=8;activeChampion=null;
+    document.querySelectorAll('.mode-tab').forEach(button=>button.addEventListener('click',()=>{
+      const next=button.dataset.mode;
+      if(!modeMeta[next]||activeMode===next)return;
+      activeMode=next;visibleCount=8;activeChampion=null;
       renderEverything();
-    });
-    function renderEverything() {renderProfile();renderPerformance();renderSessions();renderMatches();renderChampions();renderChart(activeRange);}
+    }));
+    function renderEverything() {
+      const ranked=modeMeta[activeMode].ranked;
+      document.querySelectorAll('.mode-tab').forEach(button=>{
+        const selected=button.dataset.mode===activeMode;
+        button.classList.toggle('active',selected);
+        button.setAttribute('aria-pressed',String(selected));
+      });
+      document.getElementById('ranked-history').hidden=!ranked;
+      document.getElementById('sessions-title').hidden=ranked;
+      renderProfile();renderPerformance();renderSessions();renderMatches();renderChampions();
+      if(ranked)renderChart(activeRange);
+      else document.getElementById('chart-tooltip').hidden=true;
+    }
 
     renderEverything();
   </script>
