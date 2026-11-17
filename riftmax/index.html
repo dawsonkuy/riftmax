@@ -29,6 +29,18 @@
     button { cursor: pointer; }
     button:focus-visible, input:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
     .site-header { border-bottom: 1px solid rgba(255,255,255,.055); }
+    .api-connect { margin:0 0 14px; padding:11px 14px; background:#20272a; border:1px solid #37463d; border-radius:11px; font-size:11px; color:var(--secondary); }
+    .api-connect-main { display:flex; align-items:center; gap:9px; justify-content:space-between; }
+    .api-connect-main #api-state { overflow-wrap:anywhere; }
+    .api-settings-button { color:#a9e9bc; background:none; border:0; font-weight:750; font-size:11px; flex-shrink:0; }
+    #api-settings { margin-top:13px; padding-top:12px; border-top:1px solid var(--subtle-line); display:grid; gap:8px; }
+    #api-settings[hidden] { display:none; }
+    #api-settings label { font-size:11px; font-weight:650; color:var(--secondary); }
+    #api-settings input, #api-settings select { width:100%; min-width:0; border:1px solid var(--line); border-radius:9px; background:#191e22; color:var(--text); padding:10px; font-size:12px; }
+    #api-settings select { width:auto; max-width:100%; }
+    .api-config-row { display:flex; gap:8px; }
+    .api-config-row button { flex-shrink:0; border:1px solid #527c5f; border-radius:9px; background:#314a3a; color:#d4f7dc; font-size:12px; font-weight:750; padding:0 14px; }
+    .api-helper { font-size:10px; line-height:1.55; color:var(--muted); margin-top:4px; }
     .nav { max-width: 1110px; min-height: 83px; margin: 0 auto; padding: 14px 27px; display: flex; align-items: center; gap: 26px; }
     .logo { font-size: 23px; font-weight: 840; letter-spacing: -1.25px; white-space: nowrap; }
     .logo span { color: var(--green); }
@@ -302,7 +314,7 @@
       </div>
       <form class="nav-search" id="search-form" role="search">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-        <input id="search" aria-label="Search Riot ID" placeholder="Search a player or Riot ID..." autocomplete="off" />
+        <input id="search" aria-label="Search Riot ID" placeholder="Riot ID (Name#TAG)..." autocomplete="off" />
       </form>
       <div class="nav-links">
         <button class="nav-link" data-preview="Leaderboards">Leaderboards</button>
@@ -311,6 +323,16 @@
     </nav>
   </header>
   <main class="page">
+    <div class="api-connect">
+      <div class="api-connect-main"><span id="api-state" role="status">Demo mode · no Riot backend connected</span><button id="show-api-settings" type="button" class="api-settings-button" aria-expanded="false" aria-controls="api-settings">Connect Riot backend</button></div>
+      <div id="api-settings" hidden>
+        <label for="worker-url">Cloudflare Worker URL (public endpoint, not your Riot key)</label>
+        <div class="api-config-row"><input id="worker-url" type="url" placeholder="https://riftmax-riot.your-subdomain.workers.dev" autocomplete="url" aria-label="Worker base URL"><button id="save-api-url" type="button">Save URL</button></div>
+        <label for="platform-select">Player region</label>
+        <select id="platform-select" aria-label="Player region"><option value="na1">North America (NA)</option><option value="euw1">Europe West (EUW)</option><option value="eun1">Europe Nordic East (EUNE)</option><option value="kr">Korea (KR)</option><option value="br1">Brazil (BR)</option><option value="la1">Latin America North</option><option value="la2">Latin America South</option><option value="oc1">Oceania</option><option value="jp1">Japan</option><option value="tr1">Turkey</option><option value="ph2">Philippines</option><option value="sg2">Singapore</option></select>
+        <div class="api-helper">Enter a Worker URL, then search above for a Riot ID like <strong>Player#NA1</strong>. Never enter your Riot API key here.</div>
+      </div>
+    </div>
     <div class="mode-selector" role="group" aria-label="Game mode">
       <button type="button" class="mode-tab active" data-mode="solo" aria-pressed="true"><span class="mode-name">Solo/Duo</span><span class="mode-type">Ranked</span></button>
       <button type="button" class="mode-tab" data-mode="flex" aria-pressed="false"><span class="mode-name">Flex</span><span class="mode-type">Ranked</span></button>
@@ -322,7 +344,7 @@
         <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="23" r="12" fill="#c3d0bd"/><path d="M10 60c0-14 9-24 22-24s22 10 22 24" fill="#c3d0bd"/></svg>
       </div>
       <div class="profile-main">
-        <div class="player-name">Summoner <small>#NA1</small></div>
+        <div class="player-name" id="player-name">Summoner <small>#NA1</small></div>
         <div class="rank-row" id="rank-row"><span class="rank-mark" id="rank-mark">G III</span><span class="rank-name" id="rank-name">Gold III · 82 LP</span></div>
         <div class="peak-rank" id="peak-rank">All-time peak: <strong>Gold I · 74 LP</strong> <span class="demo-marker">(demo)</span></div>
         <div class="record"><span><strong>112W</strong> / <strong>90L</strong></span><span>·</span><span>55.4% win rate</span></div>
@@ -340,6 +362,7 @@
       <div class="chart-wrap"><div class="chart"><svg id="lp-chart" viewBox="0 0 640 110" role="img" aria-label="Illustrative LP graph over recent games" preserveAspectRatio="none"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67d99a" stop-opacity=".24"/><stop offset="100%" stop-color="#67d99a" stop-opacity="0"/></linearGradient></defs><path id="chart-area" fill="url(#chart-fill)"/><path id="chart-line" fill="none" stroke="#67d99a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><g id="chart-points"></g></svg></div><div class="chart-tooltip" id="chart-tooltip" hidden role="status"></div></div>
       <div class="chart-labels"><span id="chart-start">24 hours ago</span><span>Now</span></div><div id="chart-coverage" class="chart-coverage">Demo LP history · available matches only, not complete ranked history</div>
       </div>
+      <div id="live-lp-note" class="api-helper" hidden>LP history needs recorded ranked snapshots. Riot's match history does not include verified LP changes per match.</div>
       <div class="section-title sessions-title" id="sessions-title" hidden>Play sessions</div>
       <div class="last-session" aria-label="Last play session LP change (illustrative)">
         <div><div class="last-session-label">Last session</div><div class="last-session-note" id="last-session-note">Latest play session · demo</div></div>
@@ -359,7 +382,7 @@
       <button class="load-more" id="load-more">Load more matches</button>
     </section>
     <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · ranked by Riftmax Score</span></div><div class="champion-ranking-note">Scores reward proven wins, games played and role-adjusted performance. Tap any champion for details. <span class="demo-marker">Demo data</span></div><div id="champions-list" class="champions-grid"></div><div id="champion-details" class="surface champ-expand" hidden aria-live="polite"></div></section>
-    <div class="footnote">Riftmax UI prototype. Sessions, player stats, ranks, LP, items and games are illustrative.<br />No live Riot or GRID API connection in this mockup.</div>
+    <div class="footnote" id="data-footnote">Riftmax UI prototype. Sessions, player stats, ranks, LP, items and games are illustrative.<br />Connect your private Riot Worker to search live accounts.</div>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>
@@ -396,7 +419,7 @@
       const imageIds = { 'Lee Sin': 'LeeSin', 'Kai Sa': 'Kaisa', 'Kha Zix': 'Khazix', 'K Sante': 'KSante', 'Jarvan IV': 'JarvanIV' };
       const imageId = imageIds[name] || name.replace(/[ .'’]/g, '');
       const meta = champions[name] || champions[imageId] || { initials: name.slice(0,2), color: '#4b5662', image: imageId };
-      const img = 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/' + meta.image + '.png';
+      const img = 'https://ddragon.leagueoflegends.com/cdn/' + assetVersion + '/img/champion/' + meta.image + '.png';
       return '<span class="champ-icon" style="background:' + meta.color + '"><span>' + meta.initials + '</span><img src="' + img + '" alt="" loading="lazy" onerror="this.remove()"></span>';
     }
     function renderMatches() {
@@ -482,6 +505,23 @@
     };
     let activeMode = 'solo';
     let activeRange = '24h';
+    let liveMode=false;
+    let lastLiveQuery=null;
+    let assetVersion='16.22.1';
+    const WORKER_STORAGE='riftmax-worker-url';
+    let workerBase='';
+    try { workerBase=localStorage.getItem(WORKER_STORAGE)||''; } catch (_) {}
+    function safeText(s) {return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function normalizeBase(raw) {
+      try {
+        const u=new URL(String(raw).trim());
+        if(u.username||u.password||u.search||u.hash) return null;
+        if(u.protocol!=='https:'&&!(u.protocol==='http:'&&['localhost','127.0.0.1'].includes(u.hostname)))return null;
+        return u.origin;
+      }catch{return null;}
+    }
+    if(workerBase&&!normalizeBase(workerBase))workerBase='';
+
     let visibleCount = 8;
     let activeChampion = null;
     let selectedChampion = null;
@@ -590,7 +630,8 @@
         const valid=g.filter(m=>m.result!=='remake');
         const w=valid.filter(m=>m.result==='win').length,l=valid.filter(m=>m.result==='loss').length;
         const elapsed=Math.round(g[g.length-1].minutesAgo+g[g.length-1].durationMinutes-g[0].minutesAgo);
-        return {id:i,games:g.length,w,l,lp:valid.reduce((acc,m)=>acc+m.lpDelta,0),duration:elapsed,ago:g[0].ago};
+        return {id:i,games:g.length,w,l,lp:valid.reduce((acc,m)=>acc+(Number.isFinite(m.lpDelta)?m.lpDelta:0),0),
+          lpVerified:valid.length>0&&valid.every(m=>Number.isFinite(m.lpDelta)),duration:elapsed,ago:g[0].ago};
       });
     }
     function renderProfile() {
@@ -598,9 +639,9 @@
       document.getElementById('rank-mark').textContent=m.ranked?m.rankShort:'—';
       document.getElementById('rank-mark').classList.toggle('is-unranked',!m.ranked);
       document.getElementById('rank-name').textContent=m.ranked?m.current+' · '+m.lp+' LP':m.label+' · No ranked LP';
-      document.getElementById('peak-rank').hidden=!m.ranked;
+      document.getElementById('peak-rank').hidden=!m.ranked||liveMode;
       if(m.ranked) document.getElementById('peak-rank').innerHTML='All-time peak: <strong>'+m.allTimePeak+'</strong> <span class="demo-marker">(demo)</span>';
-      document.querySelector('.record').innerHTML='<span><strong>'+w+'W</strong> / <strong>'+l+'L</strong></span><span>·</span><span>'+(w/(w+l)*100).toFixed(1)+'% win rate · demo season</span>';
+      document.querySelector('.record').innerHTML='<span><strong>'+w+'W</strong> / <strong>'+l+'L</strong></span><span>·</span><span>'+(w+l?(w/(w+l)*100).toFixed(1)+'% win rate':'No ranked record')+(liveMode?'':' · demo season')+'</span>';
     }
     function renderPerformance() {
       const games=playable(activeMode).slice(0,20),w=games.filter(m=>m.result==='win').length,l=games.length-w;
@@ -610,7 +651,7 @@
       document.getElementById('performance-range').textContent='Last '+games.length+' games · '+modeMeta[activeMode].label;
       const stats=[
         ['Win rate',games.length?(w/games.length*100).toFixed(0)+'%':'—',w+'W · '+l+'L'],
-        ['Average KDA',games.length?((kills+assists)/Math.max(1,deaths)).toFixed(2):'—','('+(kills/games.length).toFixed(1)+' / '+(deaths/games.length).toFixed(1)+' / '+(assists/games.length).toFixed(1)+')'],
+        ['Average KDA',games.length?((kills+assists)/Math.max(1,deaths)).toFixed(2):'—','('+(games.length?(kills/games.length).toFixed(1)+' / '+(deaths/games.length).toFixed(1)+' / '+(assists/games.length).toFixed(1):'No games')+')'],
         ['Current streak',streakCount?(first.result==='win'?'W':'L')+streakCount:'—',streakCount?(first.result==='win'?'Win streak':'Loss streak'):'No games']
       ];
       document.getElementById('performance-grid').innerHTML=stats.map(x=>'<div class="performance-stat"><small>'+x[0]+'</small><strong>'+x[1]+'</strong><span>'+x[2]+'</span></div>').join('');
@@ -618,17 +659,17 @@
     function renderSessions() {
       const meta=modeMeta[activeMode],sessions=getSessions(activeMode),latest=sessions[0];
       const v=document.getElementById('last-session-lp');
-      v.textContent=latest?(meta.ranked?signNumber(latest.lp)+' LP':latest.games+' games'):'—';
-      v.classList.toggle('negative',!!latest&&meta.ranked&&latest.lp<0);
-      v.classList.toggle('positive',!!latest&&meta.ranked&&latest.lp>0);
+      v.textContent=latest?(meta.ranked?(latest.lpVerified?signNumber(latest.lp)+' LP':'LP unavailable'):latest.games+' games'):'—';
+      v.classList.toggle('negative',!!latest&&meta.ranked&&latest.lpVerified&&latest.lp<0);
+      v.classList.toggle('positive',!!latest&&meta.ranked&&latest.lpVerified&&latest.lp>0);
       document.getElementById('last-session-record').textContent=latest?latest.w+'W · '+latest.l+'L · '+minutesText(latest.duration):'No games';
       document.getElementById('last-session-note').textContent=latest?'Ended '+latest.ago+' · demo':'No recent session';
       document.getElementById('session-history').innerHTML=sessions.slice(1,6).map((s,i)=>
-        '<div class="session-row"><div><span>Session '+(i+2)+' · '+s.ago+'</span><small>'+s.games+' games · '+s.w+'W / '+s.l+'L · '+minutesText(s.duration)+'</small></div><strong class="'+(s.lp<0?'negative':'positive')+'">'+(meta.ranked?signNumber(s.lp)+' LP':s.w+'W / '+s.l+'L')+'</strong></div>'
+        '<div class="session-row"><div><span>Session '+(i+2)+' · '+s.ago+'</span><small>'+s.games+' games · '+s.w+'W / '+s.l+'L · '+minutesText(s.duration)+'</small></div><strong class="'+(s.lp<0?'negative':'positive')+'">'+(meta.ranked?(s.lpVerified?signNumber(s.lp)+' LP':'LP unavailable'):s.w+'W / '+s.l+'L')+'</strong></div>'
       ).join('')||'<div class="form-note">No earlier sessions in this demo.</div>';
     }
-    function itemImg(id) { return '<span class="item-icon" title="Item '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/'+id+'.png" alt="Item '+id+'" loading="lazy" onerror="this.remove()"></span>'; }
-    function spellImg(id) { return '<span class="spell-icon" title="Summoner '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/spell/Summoner'+id+'.png" alt="'+id+'" loading="lazy" onerror="this.remove()"></span>'; }
+    function itemImg(id) { return '<span class="item-icon" title="Item '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/'+assetVersion+'/img/item/'+id+'.png" alt="Item '+id+'" loading="lazy" onerror="this.remove()"></span>'; }
+    function spellImg(id) { return '<span class="spell-icon" title="Summoner '+id+'"><img src="https://ddragon.leagueoflegends.com/cdn/'+assetVersion+'/img/spell/Summoner'+id+'.png" alt="'+id+'" loading="lazy" onerror="this.remove()"></span>'; }
     function renderMatches() {
       const meta=modeMeta[activeMode],showRemakes=document.getElementById('remakes').checked;
       const source=modeGames[activeMode].filter(m=>m.result!=='remake'||showRemakes);
@@ -646,7 +687,7 @@
         return '<article class="surface match '+m.result+'" id="match-'+m.id+'" aria-expanded="false"><button class="match-button" aria-controls="detail-'+m.id+'" aria-expanded="false" data-match="'+m.id+'">'+
           championIcon(m.champion)+'<div class="match-primary"><div class="match-top"><span class="result">'+status+'</span><span class="match-mode">'+meta.label+
           '</span><span class="match-time">· '+m.ago+'</span></div><div class="match-bottom"><span class="champ-name">'+prettyChampion(m.champion)+'</span><span class="kda">'+m.kda+
-          '</span></div></div>'+(meta.ranked?'<span class="lp-value">'+m.lp+'</span>':'')+
+          '</span></div></div>'+(meta.ranked?'<span class="lp-value">'+(Number.isFinite(m.lpDelta)?m.lp:'LP n/a')+'</span>':'')+
           '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>'+
           '<div class="match-extra" id="detail-'+m.id+'"><div class="extra-head"><span><strong>'+meta.label+'</strong> · '+m.duration+
           '</span><span>'+m.ago+' · demo match</span></div><div class="detail-grid">'+stats.map(x=>'<div class="detail-stat"><strong>'+x[1]+'</strong><small>'+x[0]+'</small></div>').join('')+
@@ -912,10 +953,11 @@
         button.classList.toggle('active',selected);
         button.setAttribute('aria-pressed',String(selected));
       });
-      document.getElementById('ranked-history').hidden=!ranked;
-      document.getElementById('sessions-title').hidden=ranked;
+      document.getElementById('ranked-history').hidden=!ranked||liveMode;
+      document.getElementById('live-lp-note').hidden=!ranked||!liveMode;
+      document.getElementById('sessions-title').hidden=ranked&&!liveMode;
       renderProfile();renderPerformance();renderSessions();renderMatches();renderChampions();
-      if(ranked)renderChart(activeRange);
+      if(ranked&&!liveMode)renderChart(activeRange);
       else document.getElementById('chart-tooltip').hidden=true;
     }
 
