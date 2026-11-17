@@ -126,10 +126,36 @@
     .detail-meter { margin:7px 0 12px; display:flex; align-items:center; gap:9px; font-size:10px; color:var(--secondary); }
     .detail-meter-track { flex:1; height:7px; border-radius:99px; overflow:hidden; background:var(--red-bg); display:flex; }
     .detail-meter-fill { height:100%; border-radius:99px; background:var(--green); }
-    .champion-card { width:100%; color:inherit; text-align:left; cursor:pointer; }
-    .champion-card:hover { border-color:#647c6b; background:#2a3033; }
-    .champion-detail { padding:12px 15px; margin-top:-4px; background:#202328; border:1px solid var(--line); border-radius:10px; font-size:11px; color:var(--secondary); }
-    .champion-detail strong { color:var(--text); }
+    .demo-marker { font-size:10px; color:var(--muted); }
+    .champions-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px 8px; align-items:start; }
+    .champion-tile { width:100%; min-width:0; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 5px 12px; text-align:center; color:var(--text); background:transparent; border:1px solid transparent; border-radius:15px; cursor:pointer; transition:transform .16s,background .16s,border-color .16s; }
+    .champion-tile:hover { background:#292f32; transform:translateY(-2px); }
+    .champion-tile:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+    .champion-tile.selected { border-color:#5a7669; background:#293530; }
+    .app-icon { width:100%; max-width:116px; aspect-ratio:1/1; border-radius:22%; overflow:hidden; display:block; background:linear-gradient(135deg,#4b5d61,#1c2428); box-shadow:0 5px 13px #0005, inset 0 0 0 1px #ffffff1f; position:relative; }
+    .app-icon::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit; border:1px solid #ffffff22; box-shadow:inset 0 1px 0 #ffffff14; }
+    .app-icon .champ-icon { width:100%; height:100%; border:0; border-radius:0; display:grid; place-items:center; font-size:27px; }
+    .app-icon .champ-icon img { width:100%; height:100%; border:0; border-radius:0; }
+    .champion-tile-name { display:block; max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:12px; font-weight:750; margin-top:3px; }
+    .champion-tile-games { display:block; font-size:11px; color:var(--muted); white-space:nowrap; }
+    .champion-tile-win { display:block; font-size:12px; font-weight:800; color:var(--green); white-space:nowrap; }
+    .champion-tile-win.low { color:var(--red); }
+    .champ-expand { margin-top:17px; padding:18px; animation:champ-reveal .18s ease-out; }
+    .champ-expand[hidden] { display:none!important; }
+    @keyframes champ-reveal { from {opacity:.5; transform:translateY(-4px);} to {opacity:1;transform:translateY(0);} }
+    .champ-expand-top { display:flex; align-items:center; gap:13px; padding-bottom:14px; border-bottom:1px solid var(--subtle-line); }
+    .champ-expand-icon { width:55px; height:55px; flex:0 0 55px; border-radius:14px; overflow:hidden; }
+    .champ-expand-icon .champ-icon { width:100%; height:100%; border:0; border-radius:0; }
+    .champ-expand-name { font-size:17px; font-weight:800; letter-spacing:-.3px; }
+    .champ-expand-meta { font-size:11px; color:var(--muted); margin-top:4px; }
+    .champ-expand-close { margin-left:auto; align-self:flex-start; width:30px; height:30px; border:1px solid var(--line); border-radius:8px; background:#2d3238; color:var(--secondary); font-size:17px; }
+    .champ-detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:14px; }
+    .champ-detail-stat { background:#202529; border:1px solid var(--subtle-line); border-radius:10px; padding:11px 8px; min-width:0; }
+    .champ-detail-stat small { display:block; font-size:10px; color:var(--muted); margin-bottom:6px; }
+    .champ-detail-stat strong { display:block; font-size:16px; font-weight:800; color:var(--text); overflow-wrap:anywhere; }
+    .champ-expand-actions { display:flex; justify-content:flex-end; margin-top:13px; }
+    .champ-view-matches { background:#365444; color:#e4f6ea; border:1px solid #638770; padding:10px 14px; border-radius:9px; font-size:11px; font-weight:750; }
+    .champ-view-matches:hover { background:#436b52; }
     .no-rank-chart { padding:34px 8px 38px; text-align:center; color:var(--secondary); font-size:12px; }
     .no-rank-chart small { display:block; color:var(--muted); margin-top:6px; font-size:11px; }
     @media(max-width:490px) {
@@ -144,6 +170,16 @@
       .mode-tab { padding:10px 2px 9px; }
       .mode-tab .mode-name { font-size:11px; }
       .mode-tab .mode-type { font-size:9px; }
+      .champions-grid { column-gap:3px; row-gap:11px; }
+      .champion-tile { gap:4px; padding:6px 2px 9px; }
+      .champion-tile-name { font-size:10px; }
+      .champion-tile-games { font-size:9px; }
+      .champion-tile-win { font-size:11px; }
+      .app-icon { border-radius:20%; }
+      .champ-expand { padding:12px; }
+      .champ-detail-grid { gap:5px; }
+      .champ-detail-stat { padding:9px 5px; }
+      .champ-detail-stat strong { font-size:13px; }
     }
     .content-tabs { display: flex; align-items: stretch; gap: 0; border-bottom: 1px solid var(--line); margin: 28px 1px 16px; }
     .tab { flex: 1 1 50%; min-width: 0; text-align: center; background: none; border: none; border-bottom: 2px solid transparent; padding: 0 12px 12px; margin-bottom: -1px; color: #8b949f; font-size: 13px; font-weight: 650; }
@@ -189,11 +225,7 @@
     .show-remakes input { accent-color: var(--green); }
     .load-more { width: 100%; border: 1px solid var(--line); color: #b9c4cd; background: #22262b; border-radius: 11px; padding: 12px; font-size: 12px; margin-top: 7px; }
     .load-more:hover { background: #2b3036; }
-    .champions-grid { display: grid; gap: 9px; }
-    .champion-card { display: flex; gap: 14px; align-items: center; padding: 15px; }
-    .champ-stat { margin-left: auto; text-align: right; }
-    .champ-stat strong { color: var(--green); font-size: 15px; }
-    .champ-stat small { font-size: 11px; color: var(--muted); display: block; margin-top: 4px; }
+
     .hidden { display: none !important; }
     .toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 15px); background: #343a40; border: 1px solid #59616a; border-radius: 10px; padding: 12px 17px; font-size: 12px; color: white; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 40px); text-align: center; z-index: 4; }
     .toast.visible { opacity: 1; transform: translate(-50%,0); }
@@ -261,7 +293,7 @@
       <div class="profile-main">
         <div class="player-name">Summoner <small>#NA1</small></div>
         <div class="rank-row" id="rank-row"><span class="rank-mark" id="rank-mark">G III</span><span class="rank-name" id="rank-name">Gold III · 82 LP</span></div>
-        <div class="peak-rank" id="peak-rank">Season peak: <strong>Gold II · 18 LP</strong></div>
+        <div class="peak-rank" id="peak-rank">All-time peak: <strong>Gold I · 74 LP</strong> <span class="demo-marker">(demo)</span></div>
         <div class="record"><span><strong>112W</strong> / <strong>90L</strong></span><span>·</span><span>55.4% win rate</span></div>
       </div>
       <button class="refresh" id="refresh" title="Refresh profile (demo)" aria-label="Refresh profile">
@@ -295,7 +327,7 @@
       <label class="show-remakes"><input type="checkbox" id="remakes" /> Show remake matches</label>
       <button class="load-more" id="load-more">Load more matches</button>
     </section>
-    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · selected mode</span></div><div id="champions-list" class="champions-grid"></div></section>
+    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · selected mode</span></div><div id="champions-list" class="champions-grid"></div><div id="champion-details" class="surface champ-expand" hidden aria-live="polite"></div></section>
     <div class="footnote">Riftmax UI prototype. Sessions, player stats, ranks, LP, items and games are illustrative.<br />No live Riot or GRID API connection in this mockup.</div>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -412,8 +444,8 @@
 
     // Enhanced Riftmax UI demo. All values are illustrative until Riot + ranked snapshots are connected.
     const modeMeta = {
-      solo: { label:'Ranked Solo/Duo', ranked:true, current:'Gold III', lp:82, rankShort:'G III', index:1, tiers:['Gold IV','Gold III','Gold II','Gold I','Platinum IV','Platinum III'], peak:'Gold II · 18 LP', season:[112,90] },
-      flex: { label:'Ranked Flex', ranked:true, current:'Silver I', lp:46, rankShort:'S I', index:1, tiers:['Silver II','Silver I','Gold IV','Gold III','Gold II','Gold I'], peak:'Gold IV · 32 LP', season:[46,39] },
+      solo: { label:'Ranked Solo/Duo', ranked:true, current:'Gold III', lp:82, rankShort:'G III', index:1, tiers:['Gold IV','Gold III','Gold II','Gold I','Platinum IV','Platinum III'], allTimePeak:'Gold I · 74 LP', season:[112,90] },
+      flex: { label:'Ranked Flex', ranked:true, current:'Silver I', lp:46, rankShort:'S I', index:1, tiers:['Silver II','Silver I','Gold IV','Gold III','Gold II','Gold I'], allTimePeak:'Gold IV · 58 LP', season:[46,39] },
       draft: { label:'Normal Draft', ranked:false, season:[39,34] },
       aram: { label:'ARAM', ranked:false, season:[57,51] }
     };
@@ -421,6 +453,7 @@
     let activeRange = 10;
     let visibleCount = 8;
     let activeChampion = null;
+    let selectedChampion = null;
     const baseMins = [34,120,300,1470,1510,2900];
     const baseStat = [
       [192,24600,19,13800,19900,[3089,3020,3135,3102,1058,3157],['Flash','Teleport']],
@@ -527,7 +560,7 @@
       document.getElementById('rank-mark').classList.toggle('is-unranked',!m.ranked);
       document.getElementById('rank-name').textContent=m.ranked?m.current+' · '+m.lp+' LP':m.label+' · No ranked LP';
       document.getElementById('peak-rank').hidden=!m.ranked;
-      if(m.ranked) document.getElementById('peak-rank').innerHTML='Season peak: <strong>'+m.peak+'</strong>';
+      if(m.ranked) document.getElementById('peak-rank').innerHTML='All-time peak: <strong>'+m.allTimePeak+'</strong> <span class="demo-marker">(demo)</span>';
       document.querySelector('.record').innerHTML='<span><strong>'+w+'W</strong> / <strong>'+l+'L</strong></span><span>·</span><span>'+(w/(w+l)*100).toFixed(1)+'% win rate · demo season</span>';
     }
     function renderPerformance() {
@@ -594,18 +627,58 @@
         document.querySelector('#matches-view .toolbar').appendChild(clear);
       } else if(!activeChampion&&clear) clear.remove();
     }
+    function championSummary() {
+      const groups=new Map();
+      for(const m of playable(activeMode)) {
+        if(!groups.has(m.champion)) groups.set(m.champion,{name:m.champion,games:0,w:0,k:0,d:0,a:0,cs:0,minutes:0,damage:0,vision:0,gold:0});
+        const g=groups.get(m.champion);
+        g.games++;g.w+=m.result==='win'?1:0;g.k+=m.kills;g.d+=m.deaths;g.a+=m.assists;
+        g.cs+=m.cs;g.minutes+=m.durationMinutes;g.damage+=m.damage;g.vision+=m.vision;g.gold+=m.gold;
+      }
+      return [...groups.values()].sort((a,b)=>b.games-a.games||a.name.localeCompare(b.name));
+    }
+    function renderChampionDetails(data) {
+      const panel=document.getElementById('champion-details');
+      const selected=data.find(g=>g.name===selectedChampion);
+      if(!selected) {
+        panel.hidden=true;
+        panel.innerHTML='';
+        return;
+      }
+      const g=selected, winRate=Math.round(100*g.w/g.games), kda=((g.k+g.a)/Math.max(g.d,1)).toFixed(2),
+        csm=(g.cs/g.minutes).toFixed(1), avgDmg=(g.damage/g.games/1000).toFixed(1),
+        avgVision=(g.vision/g.games).toFixed(1), avgGold=(g.gold/g.games/1000).toFixed(1),
+        kdaLine=[g.k,g.d,g.a].map(v=>(v/g.games).toFixed(1)).join(' / ');
+      const details=[
+        ['Win rate',winRate+'%'],['Record',g.w+'W · '+(g.games-g.w)+'L'],['KDA',kda],
+        ['Avg K / D / A',kdaLine],['CS / min',csm],['Avg damage',avgDmg+'k'],
+        ['Avg vision',avgVision],['Avg gold',avgGold+'k'],['Games',String(g.games)]
+      ];
+      panel.innerHTML=
+        '<div class="champ-expand-top"><div class="champ-expand-icon">'+championIcon(g.name)+'</div>'+
+        '<div><div class="champ-expand-name">'+prettyChampion(g.name)+'</div>'+
+        '<div class="champ-expand-meta">'+modeMeta[activeMode].label+' · champion breakdown (demo)</div></div>'+
+        '<button type="button" class="champ-expand-close" data-close-champion aria-label="Close champion details">×</button></div>'+
+        '<div class="champ-detail-grid">'+details.map(stat=>
+          '<div class="champ-detail-stat"><small>'+stat[0]+'</small><strong>'+stat[1]+'</strong></div>').join('')+
+        '</div><div class="champ-expand-actions"><button type="button" class="champ-view-matches" data-view-champion="'+g.name+'">View matches →</button></div>';
+      panel.hidden=false;
+    }
     function renderChampions() {
-      const games=playable(activeMode),grouped={};
-      games.forEach(m=>{
-        const key=m.champion, g=grouped[key]||(grouped[key]={name:key,games:0,w:0,k:0,d:0,a:0,cs:0,minutes:0,damage:0});
-        g.games++;g.w+=m.result==='win'?1:0;g.k+=m.kills;g.d+=m.deaths;g.a+=m.assists;g.cs+=m.cs;g.minutes+=m.durationMinutes;g.damage+=m.damage;
-      });
-      document.getElementById('champions-list').innerHTML=Object.values(grouped).sort((a,b)=>b.games-a.games).map(g=>{
-        const rate=(100*g.w/g.games).toFixed(0),kda=((g.k+g.a)/Math.max(1,g.d)).toFixed(2),csm=(g.cs/g.minutes).toFixed(1),damage=(g.damage/g.games/1000).toFixed(1);
-        return '<button type="button" class="surface champion-card" data-champion="'+g.name+'" aria-label="View '+prettyChampion(g.name)+' matches">'+
-          championIcon(g.name)+'<div><div class="section-title">'+prettyChampion(g.name)+'</div><div class="muted-note" style="margin-top:5px">'+g.games+' games · '+kda+' KDA · '+csm+' CS/min · '+damage+'k avg damage</div></div>'+
-          '<div class="champ-stat"><strong>'+rate+'%</strong><small>Win rate · view matches</small></div></button>';
+      const data=championSummary();
+      if(selectedChampion&&!data.some(g=>g.name===selectedChampion)) selectedChampion=null;
+      document.getElementById('champions-list').innerHTML=data.map(g=>{
+        const rate=Math.round(100*g.w/g.games);
+        const selected=g.name===selectedChampion;
+        return '<button type="button" class="champion-tile'+(selected?' selected':'')+
+          '" data-champion="'+g.name+'" aria-expanded="'+selected+'" aria-controls="champion-details" aria-label="'+
+          prettyChampion(g.name)+', '+g.games+' games, '+rate+' percent win rate. '+(selected?'Collapse':'Expand')+' details">'+
+          '<span class="app-icon">'+championIcon(g.name)+'</span>'+
+          '<span class="champion-tile-name" title="'+prettyChampion(g.name)+'">'+prettyChampion(g.name)+'</span>'+
+          '<span class="champion-tile-games">'+g.games+' '+(g.games===1?'game':'games')+'</span>'+
+          '<span class="champion-tile-win'+(rate<50?' low':'')+'">'+rate+'% WR</span></button>';
       }).join('');
+      renderChampionDetails(data);
     }
     function rankAt(rating,meta) {
       const ix=Math.max(0,Math.min(meta.tiers.length-1,Math.floor(rating/100)));
@@ -673,14 +746,23 @@
     pointsEl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const dot=e.target.closest('.chart-pip');if(dot){e.preventDefault();showDot(dot);}}});
     document.getElementById('champions-list').addEventListener('click',e=>{
       const card=e.target.closest('[data-champion]');if(!card)return;
-      activeChampion=card.dataset.champion;visibleCount=8;
+      selectedChampion=selectedChampion===card.dataset.champion?null:card.dataset.champion;
+      renderChampions();
+    });
+    document.getElementById('champion-details').addEventListener('click',e=>{
+      if(e.target.closest('[data-close-champion]')) {
+        selectedChampion=null;renderChampions();return;
+      }
+      const view=e.target.closest('[data-view-champion]');
+      if(!view)return;
+      activeChampion=view.dataset.viewChampion;visibleCount=8;
       switchTab('matches');renderMatches();
       document.querySelector('.content-tabs').scrollIntoView({behavior:'smooth',block:'start'});
     });
     document.querySelectorAll('.mode-tab').forEach(button=>button.addEventListener('click',()=>{
       const next=button.dataset.mode;
       if(!modeMeta[next]||activeMode===next)return;
-      activeMode=next;visibleCount=8;activeChampion=null;
+      activeMode=next;visibleCount=8;activeChampion=null;selectedChampion=null;
       renderEverything();
     }));
     function renderEverything() {
