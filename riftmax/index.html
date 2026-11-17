@@ -297,15 +297,31 @@
     .match[aria-expanded="true"] .match-extra { display: block; }
     .extra-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 14px; font-size: 11px; color: var(--secondary); flex-wrap: wrap; }
     .extra-head strong { color: var(--text); font-weight: 650; }
-    .scoreboard { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .team-title { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; margin-bottom: 9px; font-weight: 750; }
-    .team-title.blue { color: var(--blue); } .team-title.red { color: var(--red); }
-    .team-player { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(255,255,255,.045); font-size: 11px; }
-    .player-identity { display: flex; align-items: center; flex: 1; min-width: 0; gap: 9px; }
-    .team-player .player-name { color: #cbd2d8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .team-player .champ-icon { width: 25px; height: 25px; flex: 0 0 25px; border-radius: 6px; font-size: 10px; }
-    .team-player small { color: var(--muted); white-space: nowrap; }
-    .team-player.me .player-name { color: var(--green); font-weight: 760; }
+    .scoreboard { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; margin-top:8px; }
+    .team-sheet { min-width:0; border:1px solid #48515a; border-radius:11px; overflow:hidden; }
+    .team-title { font-size:11px; letter-spacing:.025em; text-transform:none; padding:10px 12px; margin:0; font-weight:800; background:#1c2731; border-bottom:1px solid #46515d; }
+    .team-title.blue { color:#b5d0ff; }
+    .team-title.red { color:#ffb3bd; background:#30222a; }
+    .team-player { padding:10px 12px; border-top:1px solid rgba(255,255,255,.08); display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"identity kda" "stats items"; align-items:center; gap:7px 10px; font-size:11px; }
+    .team-player:first-of-type { border-top:0; }
+    .team-player.me { box-shadow:inset 3px 0 var(--green); background:rgba(118,221,151,.075); }
+    .team-player .player-identity { grid-area:identity; display:flex; min-width:0; align-items:center; gap:8px; }
+    .team-player .player-name { min-width:0; color:#e8ecf0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; font-weight:750; }
+    .team-player .player-tag { color:#8493a0; font-size:10px; font-weight:500; }
+    .team-player.me .player-name { color:#a6e9ba; }
+    .team-player .champ-icon { width:28px; height:28px; flex:0 0 28px; border-radius:7px; font-size:10px; }
+    .team-kda { grid-area:kda; color:#f0f3f6; white-space:nowrap; text-align:right; font-weight:800; font-size:12px; }
+    .team-metrics { grid-area:stats; display:flex; flex-wrap:wrap; align-items:center; gap:5px 12px; color:#c3d0da; font-size:10px; }
+    .team-metrics b { font-weight:750; color:#f3f5f7; }
+    .team-items { grid-area:items; display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:3px; }
+    .team-items .item-icon { width:24px; height:24px; border-radius:5px; }
+    .team-items .item-empty { width:24px; height:24px; border:1px solid #ffffff22; background:#11171b77; border-radius:5px; }
+    .team-legacy { font-size:10px; color:#a8b2bf; grid-area:stats / stats / items / items; }
+    @media(max-width:610px) {
+      .team-player { grid-template-areas:"identity kda" "stats stats" "items items"; padding:9px 10px; }
+      .team-items { justify-content:flex-start; }
+      .team-metrics { gap:5px 10px; }
+    }
     .show-remakes { display: flex; align-items: center; justify-content: center; gap: 9px; color: var(--muted); font-size: 11px; cursor: pointer; margin: 19px 0; }
     .show-remakes input { accent-color: var(--green); }
     .load-more { width: 100%; border: 1px solid var(--line); color: #b9c4cd; background: #22262b; border-radius: 11px; padding: 12px; font-size: 12px; margin-top: 7px; }
@@ -841,9 +857,30 @@
       box.innerHTML=shown.map(m=>{
         const status=m.result==='win'?'Victory':m.result==='loss'?'Defeat':'Remake';
         const gameLabel=liveMode?safeText(m.mode):meta.label;
-        const score=(players,title,cls,isAlly)=>'<div><div class="team-title '+cls+'">'+title+'</div>'+
-          players.map((p,i)=>'<div class="team-player '+(isAlly&&i===0?'me':'')+'"><div class="player-identity">'+championIcon(p[0])+
-            '<span class="player-name">'+p[0]+'</span></div><small>'+p[1]+'</small></div>').join('')+'</div>';
+        const score=(players,title,cls,isAlly)=>'<div class="team-sheet"><div class="team-title '+cls+'">'+title+'</div>'+
+          (Array.isArray(players)?players:[]).map((raw,i)=>{
+            const legacy=Array.isArray(raw);
+            const p=legacy?{champion:raw[0],name:raw[0],kda:raw[1],isSelf:isAlly&&i===0}:raw||{};
+            const champion=safeText(p.champion||'Unknown');
+            const name=safeText(p.name||p.champion||'Unknown');
+            const tag=p.tagLine?'<span class="player-tag">#'+safeText(p.tagLine)+'</span>':'';
+            const kda=legacy?safeText(p.kda||'—'):[p.kills,p.deaths,p.assists].map(v=>Number(v)||0).join(' / ');
+            const hasDetails=!legacy&&Array.isArray(p.items);
+            const metrics=hasDetails?'<div class="team-metrics">'+
+              '<span>CS <b>'+Math.round(Number(p.cs)||0)+'</b></span>'+
+              '<span>DMG <b>'+((Number(p.damage)||0)/1000).toFixed(1)+'k</b></span>'+
+              '<span>Taken <b>'+((Number(p.damageTaken)||0)/1000).toFixed(1)+'k</b></span>'+
+              '<span>Gold <b>'+((Number(p.gold)||0)/1000).toFixed(1)+'k</b></span>'+
+              '<span>Vision <b>'+Math.round(Number(p.vision)||0)+'</b></span>'+
+              '<span>Lvl <b>'+Math.round(Number(p.level)||0)+'</b></span></div>':
+              '<div class="team-legacy">Detailed player stats unavailable for this cached/demo match.</div>';
+            const items=hasDetails?'<div class="team-items" aria-label="Item build">'+
+              p.items.slice(0,7).map(id=>Number(id)>0?itemImg(Number(id)):'<span class="item-empty" title="Empty item slot"></span>').join('')+
+              '</div>':'';
+            return '<div class="team-player'+(p.isSelf?' me':'')+'"><div class="player-identity">'+championIcon(p.champion||'Unknown')+
+              '<span class="player-name" title="'+name+'">'+name+tag+'</span></div>'+
+              '<span class="team-kda">'+kda+'</span>'+metrics+items+'</div>';
+          }).join('')+'</div>';
         const stats=[['KDA',m.kda],['CS / min',(m.cs/m.durationMinutes).toFixed(1)],['Damage',(m.damage/1000).toFixed(1)+'k'],
           ['Gold',(m.gold/1000).toFixed(1)+'k'],['Vision',String(m.vision)]];
         const damagePct=m.opponentDamage?Math.round(m.damage/(m.damage+m.opponentDamage)*100):50;
@@ -1131,7 +1168,7 @@
       node.style.color=isError?'#fa8188':'#a9ccaf';
     }
     function seasonCacheKey(platform,puuid,seasonStart) {
-      return 'riftmax-season-v2:'+platform+':'+puuid+':'+seasonStart;
+      return 'riftmax-season-v3:'+platform+':'+puuid+':'+seasonStart;
     }
     function cacheSeason() {
       if(!seasonAccountKey||!liveMode)return;
