@@ -212,6 +212,38 @@
     .champion-tile-win { display:block; font-size:12px; font-weight:800; color:var(--green); white-space:nowrap; }
     .champion-tile-win.low { color:var(--red); }
     .champ-expand { margin-top:17px; padding:18px; animation:champ-reveal .18s ease-out; }
+    body.champion-modal-open { overflow:hidden; }
+    .champion-modal { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.78); display:flex; align-items:center; justify-content:center; padding:18px; }
+    .champion-modal[hidden] { display:none!important; }
+    .champion-modal .champ-expand { width:min(100%,760px); margin:0; max-height:min(90vh,920px); overflow-y:auto; overscroll-behavior:contain; background:#20252b; border:1px solid #485461; border-radius:16px; padding:22px; box-shadow:0 30px 90px #000c; }
+    .champion-modal .champ-expand:focus { outline:none; }
+    .champion-games-section { margin-top:20px; border-top:1px solid var(--subtle-line); padding-top:16px; }
+    .champion-games-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:5px; }
+    .champion-games-head strong { font-size:15px; font-weight:800; }
+    .champion-games-head span { font-size:10px; color:var(--muted); }
+    .champion-games-note { margin-bottom:11px; color:var(--secondary); font-size:11px; line-height:1.45; }
+    .champion-game-list { display:grid; gap:7px; }
+    .champion-game { background:#181e24; border:1px solid #36404a; border-left-width:3px; border-radius:10px; padding:11px 12px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px 10px; }
+    .champion-game.win { border-left-color:#67d99a; }
+    .champion-game.loss { border-left-color:#fa8188; }
+    .champion-game.remake { border-left-color:#a8b1bc; }
+    .champion-game-title { display:flex; flex-wrap:wrap; align-items:center; gap:6px 9px; font-size:12px; font-weight:750; min-width:0; }
+    .champion-game-title .result-win { color:#84e7ad; }
+    .champion-game-title .result-loss { color:#ff929c; }
+    .champion-game-title small { color:var(--muted); font-size:10px; font-weight:500; }
+    .champion-game-stats { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:5px 13px; font-size:11px; color:#c4ced8; }
+    .champion-game-stats b { color:#f3f4f6; font-weight:750; }
+    .champion-game-items { grid-column:1; display:flex; flex-wrap:wrap; gap:3px; align-items:center; min-width:0; }
+    .champion-game-items .item-icon { width:25px; height:25px; }
+    .champion-game-open { grid-column:2; grid-row:1; align-self:start; white-space:nowrap; border:1px solid #56718a; background:#2a4154; color:#edf4ff; border-radius:7px; padding:6px 9px; font-size:10px; font-weight:800; }
+    .champion-game-open:hover { background:#385875; }
+    @media(max-width:560px) {
+      .champion-modal { padding:7px; align-items:stretch; }
+      .champion-modal .champ-expand { max-height:calc(100dvh - 14px); padding:16px 12px; border-radius:12px; }
+      .champ-detail-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .champ-score-breakdown { grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
+      .champion-game { padding:10px 9px; }
+    }
     .champ-expand[hidden] { display:none!important; }
     @keyframes champ-reveal { from {opacity:.5; transform:translateY(-4px);} to {opacity:1;transform:translateY(0);} }
     .champ-expand-top { display:flex; align-items:center; gap:13px; padding-bottom:14px; border-bottom:1px solid var(--subtle-line); }
@@ -481,7 +513,10 @@
       <label class="show-remakes"><input type="checkbox" id="remakes" /> Show remake matches</label>
       <button class="load-more" id="load-more">Load more matches</button>
     </section>
-    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · ranked by Riftmax Score</span></div><div class="champion-ranking-note">Scores reward proven wins, games played and role-adjusted performance. Tap any champion for details. <span class="demo-marker">Demo data</span></div><div id="champions-list" class="champions-grid"></div><div id="champion-details" class="surface champ-expand" hidden aria-live="polite"></div></section>
+    <section id="champions-view" class="hidden" role="tabpanel" aria-labelledby="tab-champions"><div class="toolbar"><span class="muted-note">Champion performance · ranked by Riftmax Score</span></div><div class="champion-ranking-note">Scores reward proven wins, games played and role-adjusted performance. Tap any champion for details. <span class="demo-marker">Demo data</span></div><div id="champions-list" class="champions-grid"></div></section>
+    <div id="champion-modal" class="champion-modal" hidden>
+      <section id="champion-details" class="surface champ-expand" role="dialog" aria-modal="true" aria-labelledby="champion-modal-title" tabindex="-1" hidden></section>
+    </div>
     <div class="footnote" id="data-footnote">Riftmax UI prototype. Sessions, player stats, ranks, LP, items and games are illustrative.<br />Connect your private Riot Worker to search live accounts.</div>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -979,11 +1014,11 @@
         panel.innerHTML='';
         return;
       }
-      const g=selected, winRate=Math.round(100*g.w/g.games), kda=((g.k+g.a)/Math.max(g.d,1)).toFixed(2),
-        csm=(g.cs/g.minutes).toFixed(1), avgDmg=(g.damage/g.games/1000).toFixed(1),
-        avgVision=(g.vision/g.games).toFixed(1), avgGold=(g.gold/g.games/1000).toFixed(1),
-        kdaLine=[g.k,g.d,g.a].map(v=>(v/g.games).toFixed(1)).join(' / '),
-        rating=g.scoring;
+      const preservedScroll=panel.scrollTop;
+      const g=selected,winRate=Math.round(100*g.w/g.games),kda=((g.k+g.a)/Math.max(g.d,1)).toFixed(2),
+        csm=(g.cs/g.minutes).toFixed(1),avgDmg=(g.damage/g.games/1000).toFixed(1),
+        avgVision=(g.vision/g.games).toFixed(1),avgGold=(g.gold/g.games/1000).toFixed(1),
+        kdaLine=[g.k,g.d,g.a].map(v=>(v/g.games).toFixed(1)).join(' / '),rating=g.scoring;
       const details=[
         ['Win rate',winRate+'%'],['Record',g.w+'W · '+(g.games-g.w)+'L'],['KDA',kda],
         ['Avg K / D / A',kdaLine],['CS / min',csm],['Avg damage',avgDmg+'k'],
@@ -994,11 +1029,35 @@
         {label:'Experience · 25%',value:rating.experienceScore},
         {label:'Performance · 15%',value:rating.performanceScore}
       ];
+      // Include every available game with this champion across all queues,
+      // not just the selected tab. The season import may still be incomplete.
+      const championGames=modeGames.all.filter(m=>m.champion===g.name)
+        .sort((a,b)=>(Number(b.gameEndTimestamp)||0)-(Number(a.gameEndTimestamp)||0)||
+          (Number(a.minutesAgo)||0)-(Number(b.minutesAgo)||0));
+      const matchList=championGames.map(m=>{
+        const result=m.result==='win'?'Victory':m.result==='loss'?'Defeat':'Remake';
+        const tone=m.result==='win'?'result-win':m.result==='loss'?'result-loss':'';
+        const gameId=safeText(String(m.id));
+        const itemList=Array.isArray(m.items)?m.items.filter(id=>Number(id)>0).slice(0,7).map(itemImg).join(''):'';
+        return '<article class="champion-game '+safeText(m.result)+'">'+
+          '<div class="champion-game-title"><span class="'+tone+'">'+result+'</span>'+
+          '<small>'+safeText(m.mode||modeMeta[activeMode].label)+'</small><small>'+safeText(m.ago||'')+'</small></div>'+
+          '<button type="button" class="champion-game-open" data-open-match-id="'+gameId+'">View game</button>'+
+          '<div class="champion-game-stats"><span>KDA <b>'+safeText(m.kda||'—')+'</b></span>'+
+          '<span>CS <b>'+Math.round(Number(m.cs)||0)+'</b></span>'+
+          '<span>Damage <b>'+((Number(m.damage)||0)/1000).toFixed(1)+'k</b></span>'+
+          '<span>Gold <b>'+((Number(m.gold)||0)/1000).toFixed(1)+'k</b></span>'+
+          '<span>Vision <b>'+Math.round(Number(m.vision)||0)+'</b></span></div>'+
+          (itemList?'<div class="champion-game-items" aria-label="Item build">'+itemList+'</div>':'')+
+          '</article>';
+      }).join('');
+      const partial=liveMode&&!seasonComplete;
       panel.innerHTML=
         '<div class="champ-expand-top"><div class="champ-expand-icon">'+championIcon(g.name)+'</div>'+
-        '<div><div class="champ-expand-name">'+prettyChampion(g.name)+'</div>'+
-        '<div class="champ-expand-meta">'+modeMeta[activeMode].label+' · '+rating.role+(liveMode?' · loaded season games':' · champion breakdown (demo)')+'</div></div>'+
-        '<button type="button" class="champ-expand-close" data-close-champion aria-label="Close champion details">×</button></div>'+
+        '<div><h2 class="champ-expand-name" id="champion-modal-title">'+safeText(prettyChampion(g.name))+'</h2>'+
+        '<div class="champ-expand-meta">'+safeText(modeMeta[activeMode].label)+' performance · '+
+          safeText(rating.role)+(liveMode?' · Riot matches loaded':' · demo data')+'</div></div>'+
+        '<button type="button" class="champ-expand-close" data-close-champion aria-label="Close champion popup">×</button></div>'+
         '<div class="champion-scoreline"><div><strong>#'+g.position+' · '+rating.total+'/100</strong>'+
         '<div style="font-size:11px;color:var(--secondary);margin-top:3px">Riftmax Champion Score</div></div>'+
         '<span>Adjusted WR: '+(rating.adjustedWinRate*100).toFixed(1)+'% · Actual WR: '+winRate+'%</span></div>'+
@@ -1006,14 +1065,21 @@
           '<div class="champ-breakdown-cell"><small>'+f.label+'</small><strong>'+Math.round(f.value)+'/100</strong>'+
           '<div class="breakdown-track"><div class="breakdown-fill" style="width:'+f.value.toFixed(1)+'%"></div></div></div>').join('')+'</div>'+
         '<div class="champ-algorithm-note">Score = 60% adjusted win rate + 25% games + 15% role-adjusted performance. '+
-        'Win rate starts with a 20-game 50% prior; game volume has diminishing returns (capped at 100 games); '+
-        'KDA, damage, CS and vision are compared with illustrative role benchmarks, and performance is sample-size adjusted. '+
-        (activeMode==='aram'?'ARAM performance uses KDA and damage only. ':'')+
-        'Not a global champion power ranking.</div>'+
+          'Win rate is adjusted for small samples; experience has diminishing returns. '+
+          'Benchmarks are illustrative and are not Riot-certified.</div>'+
         '<div class="champ-detail-grid">'+details.map(stat=>
-          '<div class="champ-detail-stat"><small>'+stat[0]+'</small><strong>'+stat[1]+'</strong></div>').join('')+
-        '</div><div class="champ-expand-actions"><button type="button" class="champ-view-matches" data-view-champion="'+g.name+'">View matches →</button></div>';
+          '<div class="champ-detail-stat"><small>'+stat[0]+'</small><strong>'+stat[1]+'</strong></div>').join('')+'</div>'+
+        '<section class="champion-games-section" aria-label="All games played on this champion">'+
+          '<div class="champion-games-head"><strong>All games on '+safeText(prettyChampion(g.name))+'</strong>'+
+          '<span>'+championGames.length+' '+(championGames.length===1?'game':'games')+' loaded</span></div>'+
+          '<div class="champion-games-note">'+
+            (partial?'Season import in progress. More games will appear as Riot history loads.':
+            liveMode?'All available imported games this season, across game modes.':
+            'Demo games across all modes; connect Riot to see real match history.')+
+          '</div><div class="champion-game-list">'+(matchList||'<div class="form-note">No games available yet.</div>')+
+          '</div></section>';
       panel.hidden=false;
+      panel.scrollTop=preservedScroll;
     }
     function renderChampions() {
       const data=championSummary();
@@ -1022,9 +1088,9 @@
         const rate=Math.round(100*g.w/g.games);
         const selected=g.name===selectedChampion;
         return '<button type="button" class="champion-tile'+(selected?' selected':'')+
-          '" data-champion="'+g.name+'" aria-expanded="'+selected+'" aria-controls="champion-details" aria-label="'+
+          '" data-champion="'+g.name+'" aria-haspopup="dialog" aria-expanded="'+selected+'" aria-controls="champion-details" aria-label="'+
           'Rank '+g.position+', '+prettyChampion(g.name)+', score '+g.scoring.total+' of 100, '+g.games+' games, '+rate+' percent win rate. '+
-          (selected?'Collapse':'Expand')+' details">'+
+          'Open details popup">'+
           '<span class="app-icon">'+championIcon(g.name)+
           '<span class="champion-rank'+(g.position===1?' medal-gold':g.position===2?' medal-silver':g.position===3?' medal-bronze':'')+'">#'+g.position+'</span>'+
           '<span class="champion-score" title="Riftmax Score '+g.scoring.total+'/100">'+g.scoring.total+'</span></span>'+
@@ -1135,24 +1201,75 @@
     pointsEl.addEventListener('focusout',e=>{if(e.target.closest('.chart-pip'))document.getElementById('chart-tooltip').hidden=true;});
     pointsEl.addEventListener('click',e=>{const dot=e.target.closest('.chart-pip');if(dot)showDot(dot);});
     pointsEl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const dot=e.target.closest('.chart-pip');if(dot){e.preventDefault();showDot(dot);}}});
+    function closeChampionModal(restoreFocus=true) {
+      const was=selectedChampion;
+      const modal=document.getElementById('champion-modal');
+      modal.hidden=true;
+      document.body.classList.remove('champion-modal-open');
+      selectedChampion=null;
+      renderChampions();
+      if(restoreFocus&&was) {
+        const trigger=[...document.querySelectorAll('[data-champion]')].find(b=>b.dataset.champion===was);
+        if(trigger)trigger.focus();
+      }
+    }
     document.getElementById('champions-list').addEventListener('click',e=>{
       const card=e.target.closest('[data-champion]');if(!card)return;
-      selectedChampion=selectedChampion===card.dataset.champion?null:card.dataset.champion;
+      selectedChampion=card.dataset.champion;
       renderChampions();
+      document.getElementById('champion-modal').hidden=false;
+      document.body.classList.add('champion-modal-open');
+      const panel=document.getElementById('champion-details');
+      panel.scrollTop=0;
+      const close=panel.querySelector('[data-close-champion]');
+      if(close)close.focus();
     });
-    document.getElementById('champion-details').addEventListener('click',e=>{
-      if(e.target.closest('[data-close-champion]')) {
-        selectedChampion=null;renderChampions();return;
+    document.getElementById('champion-modal').addEventListener('click',e=>{
+      const modal=document.getElementById('champion-modal');
+      if(e.target===modal||e.target.closest('[data-close-champion]')) {
+        closeChampionModal();return;
       }
-      const view=e.target.closest('[data-view-champion]');
-      if(!view)return;
-      activeChampion=view.dataset.viewChampion;visibleCount=8;
-      switchTab('matches');renderMatches();
-      document.querySelector('.content-tabs').scrollIntoView({behavior:'smooth',block:'start'});
+      const link=e.target.closest('[data-open-match-id]');
+      if(!link)return;
+      const id=link.dataset.openMatchId;
+      const game=modeGames.all.find(m=>String(m.id)===id);
+      if(!game)return;
+      // Jump to this exact game, even if it was in another queue or was a remake.
+      if(game.result==='remake')document.getElementById('remakes').checked=true;
+      activeMode=modeMeta[game.modeKey]?game.modeKey:'other';
+      activeChampion=null;
+      const eligible=modeGames[activeMode].filter(m=>m.result!=='remake'||document.getElementById('remakes').checked);
+      const index=eligible.findIndex(m=>String(m.id)===id);
+      visibleCount=Math.max(8,index+1);
+      closeChampionModal(false);
+      renderEverything();
+      switchTab('matches');
+      const article=document.getElementById('match-'+id);
+      if(article) {
+        article.setAttribute('aria-expanded','true');
+        const button=article.querySelector('[data-match]');
+        if(button)button.setAttribute('aria-expanded','true');
+        article.scrollIntoView({behavior:'smooth',block:'center'});
+      }
+    });
+    document.addEventListener('keydown',e=>{
+      const modal=document.getElementById('champion-modal');
+      if(modal.hidden)return;
+      if(e.key==='Escape') {
+        e.preventDefault();closeChampionModal();return;
+      }
+      if(e.key==='Tab') {
+        const focusables=[...modal.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),[tabindex="0"]')];
+        if(!focusables.length){e.preventDefault();modal.querySelector('[role="dialog"]').focus();return;}
+        const first=focusables[0],last=focusables[focusables.length-1];
+        if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+        else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+      }
     });
     document.querySelectorAll('.mode-tab').forEach(button=>button.addEventListener('click',()=>{
       const next=button.dataset.mode;
       if(!modeMeta[next]||activeMode===next)return;
+      if(!document.getElementById('champion-modal').hidden)closeChampionModal(false);
       activeMode=next;visibleCount=8;activeChampion=null;selectedChampion=null;
       renderEverything();
     }));
